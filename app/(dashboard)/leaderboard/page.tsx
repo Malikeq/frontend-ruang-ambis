@@ -102,7 +102,7 @@ export default function LeaderboardPage() {
             <p className="mt-1 text-sm t-muted">Belum ada pengguna di leaderboard. Mulai latihan untuk masuk daftar!</p>
           </div>
         ) : (
-          <div style={{ divide: 'border-color: var(--border)' }}>
+          <div>
             {entries.map((e) => {
               const isMe = e.user.id === me?.id;
               return (
