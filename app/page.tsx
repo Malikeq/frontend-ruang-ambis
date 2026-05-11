@@ -64,9 +64,7 @@ export default function HomePage() {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/login" className="rounded-lg px-3.5 py-2 text-sm transition-colors" style={{ color: 'var(--text-muted)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
+            <Link href="/login" className="nav-link rounded-lg px-3.5 py-2 text-sm">
               Masuk
             </Link>
             <Link href="/register" className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
@@ -167,10 +165,8 @@ export default function HomePage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map(f => (
-              <div key={f.title} className="group rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]"
-                style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary-border)'; (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-elevated)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-card)'; }}>
+              <div key={f.title} className="card-hover group rounded-2xl p-6 hover:scale-[1.01]"
+                style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}>
                 <div className="mb-4 flex items-start justify-between">
                   <div className="text-3xl">{f.icon}</div>
                   <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold"

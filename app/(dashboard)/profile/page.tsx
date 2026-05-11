@@ -39,18 +39,19 @@ export default function ProfilePage() {
       {/* Profile card */}
       <Card>
         <div className="flex items-start gap-5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-xl font-black text-white">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white"
+            style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }}>
             {getInitials(user.name)}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h2 className="text-lg font-bold text-[#f1f5f9]">{user.name}</h2>
+              <h2 className="text-lg font-bold t-primary">{user.name}</h2>
               <Badge variant={tierBadgeVariant}>{TIER_LABELS[tier] ?? tier}</Badge>
             </div>
-            <p className="flex items-center gap-1.5 text-sm text-[#64748b]">
+            <p className="flex items-center gap-1.5 text-sm t-muted">
               <Mail className="h-3.5 w-3.5" /> {user.email}
             </p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[#475569]">
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs t-muted">
               <Shield className="h-3 w-3" />
               {user.role === 'superadmin' ? 'Super Admin' : 'Pengguna'}
             </p>
@@ -58,17 +59,18 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats bar */}
-        <div className="mt-5 grid grid-cols-3 divide-x divide-[rgba(255,255,255,0.06)] rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]">
+        <div className="mt-5 grid grid-cols-3 rounded-xl" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
           {[
-            { icon: Flame, label: 'Streak',  value: `${user.streak_days}`,                    unit: 'hari',  color: 'text-orange-400' },
-            { icon: Zap,   label: 'Poin',    value: user.points.toLocaleString('id'),          unit: 'poin',  color: 'text-yellow-400' },
-            { icon: Star,  label: 'Status',  value: TIER_LABELS[tier] ?? tier,                unit: '',      color: getTierColor(tier) },
-          ].map(({ icon: Icon, label, value, unit, color }) => (
-            <div key={label} className="flex flex-col items-center py-4 px-2 text-center">
+            { icon: Flame, label: 'Streak',  value: `${user.streak_days}`,          unit: 'hari', color: 'text-orange-400' },
+            { icon: Zap,   label: 'Poin',    value: user.points.toLocaleString('id'), unit: 'poin', color: 'text-yellow-400' },
+            { icon: Star,  label: 'Status',  value: TIER_LABELS[tier] ?? tier,       unit: '',     color: getTierColor(tier) },
+          ].map(({ icon: Icon, label, value, unit, color }, idx) => (
+            <div key={label} className="flex flex-col items-center py-4 px-2 text-center"
+              style={idx > 0 ? { borderLeft: '1px solid var(--border)' } : {}}>
               <Icon className={cn('h-4 w-4 mb-1', color)} />
-              <p className="text-base font-black text-[#f1f5f9] leading-tight">{value}</p>
-              {unit && <p className="text-[10px] text-[#475569]">{unit}</p>}
-              <p className="text-[10px] text-[#64748b] mt-0.5">{label}</p>
+              <p className="text-base font-black t-primary leading-tight">{value}</p>
+              {unit && <p className="text-[10px] t-muted">{unit}</p>}
+              <p className="text-[10px] t-muted mt-0.5">{label}</p>
             </div>
           ))}
         </div>
@@ -78,26 +80,28 @@ export default function ProfilePage() {
       {user.kampusTargets && user.kampusTargets.length > 0 && (
         <Card>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-[#f1f5f9] flex items-center gap-2">
-              <Target className="h-4 w-4 text-[#6366f1]" /> Target Kampus
+            <h3 className="font-semibold t-primary flex items-center gap-2">
+              <Target className="h-4 w-4" style={{ color: 'var(--primary)' }} /> Target Kampus
             </h3>
-            <Link href="/onboarding" className="text-xs text-[#6366f1] hover:underline">Ubah</Link>
+            <Link href="/onboarding" className="auth-link text-xs">Ubah</Link>
           </div>
           <div className="space-y-2.5">
             {[...user.kampusTargets]
               .sort((a, b) => a.priority - b.priority)
               .map((t, i) => (
-                <div key={t.kampus.id} className="flex items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-xs font-black text-white">
+                <div key={t.kampus.id} className="flex items-center gap-3 rounded-xl p-3"
+                  style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
+                    style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }}>
                     {i + 1}
                   </div>
                   <KampusLogo kampus={t.kampus} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[#f1f5f9]">{t.kampus.akronim}</p>
-                    <p className="truncate text-xs text-[#64748b]">{t.jurusan.nama}</p>
+                    <p className="truncate text-sm font-semibold t-primary">{t.kampus.akronim}</p>
+                    <p className="truncate text-xs t-muted">{t.jurusan.nama}</p>
                   </div>
                   {t.jurusan.passing_grade_estimate && (
-                    <span className="shrink-0 text-xs font-bold text-[#10b981]">
+                    <span className="shrink-0 text-xs font-bold text-emerald-500">
                       {Number(t.jurusan.passing_grade_estimate).toFixed(1)}%
                     </span>
                   )}
@@ -109,19 +113,20 @@ export default function ProfilePage() {
 
       {/* Upgrade CTA for free users */}
       {tier === 'free' && (
-        <Card className="border-[rgba(139,92,246,0.3)] bg-gradient-to-br from-[rgba(99,102,241,0.08)] to-[rgba(139,92,246,0.04)]">
+        <Card style={{ borderColor: 'rgba(139,92,246,0.3)', background: 'linear-gradient(135deg, var(--primary-muted), var(--bg-elevated))' }}>
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6]">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }}>
               <Star className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-[#f1f5f9]">Upgrade ke Premium</h3>
-              <p className="mt-1 text-sm text-[#64748b]">
+              <h3 className="font-bold t-primary">Upgrade ke Premium</h3>
+              <p className="mt-1 text-sm t-muted">
                 Soal tak terbatas, Tanya AI 30x/hari, Foto Soal 10x/hari, dan analisis kelemahan lengkap.
               </p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {['Soal unlimited', 'Tanya AI 30x/hari', 'Foto Soal 10x/hari', 'Analisis lengkap'].map(f => (
-                  <span key={f} className="flex items-center gap-1 text-xs text-[#a5b4fc]">
+                  <span key={f} className="flex items-center gap-1 text-xs" style={{ color: 'var(--primary)' }}>
                     <CheckCircle2 className="h-3 w-3" /> {f}
                   </span>
                 ))}
@@ -138,27 +143,26 @@ export default function ProfilePage() {
         </Card>
       )}
 
-
       {/* Account settings */}
       <Card>
-        <h3 className="mb-3 font-semibold text-[#f1f5f9]">Pengaturan Akun</h3>
+        <h3 className="mb-3 font-semibold t-primary">Pengaturan Akun</h3>
         <div className="space-y-1">
           {[
             { href: '/onboarding',      label: 'Ubah Target Kampus', icon: Target  },
             { href: '/forgot-password', label: 'Ganti Password',     icon: Shield  },
           ].map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center justify-between rounded-xl p-3 hover:bg-[rgba(255,255,255,0.04)] transition-colors group"
-            >
+            <Link key={href} href={href}
+              className="flex items-center justify-between rounded-xl p-3 transition-colors group"
+              style={{ ['--hover-bg' as any]: 'var(--bg-elevated)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-elevated)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}>
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(99,102,241,0.1)]">
-                  <Icon className="h-4 w-4 text-[#6366f1]" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: 'var(--primary-muted)' }}>
+                  <Icon className="h-4 w-4" style={{ color: 'var(--primary)' }} />
                 </div>
-                <span className="text-sm text-[#94a3b8]">{label}</span>
+                <span className="text-sm t-secondary">{label}</span>
               </div>
-              <ChevronRight className="h-4 w-4 text-[#334155] group-hover:text-[#6366f1] transition-colors" />
+              <ChevronRight className="h-4 w-4 t-muted" />
             </Link>
           ))}
         </div>

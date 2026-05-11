@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { ThemeProvider } from '@/components/ui/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -12,26 +13,9 @@ export const metadata: Metadata = {
   openGraph: { type: 'website', locale: 'id_ID', siteName: 'AI Lolos PTN' },
 };
 
-// Inline script — runs before React hydrates, prevents flash of wrong theme
-const themeScript = `
-(function() {
-  try {
-    var stored = localStorage.getItem('theme');
-    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var theme = stored || (prefersDark ? 'dark' : 'light');
-    document.documentElement.classList.add(theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  } catch(e) {}
-})();
-`;
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={inter.variable} suppressHydrationWarning>
-      <head>
-        {/* Prevent FOUC — inject theme class before paint */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body
         className="min-h-screen antialiased"
         style={{
@@ -41,7 +25,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           transition: 'background-color 0.3s ease, color 0.3s ease',
         }}
       >
-        <Providers>{children}</Providers>
+        {/*
+          ThemeProvider (client) applies any stored localStorage override on mount.
+          Automatic OS detection works via CSS prefers-color-scheme in globals.css —
+          no blocking script needed, no FOUC.
+        */}
+        <ThemeProvider>
+          <Providers>{children}</Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

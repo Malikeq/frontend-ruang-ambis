@@ -75,15 +75,15 @@ function AiPanel({ soal }: { soal: SoalData }) {
   return (
     <div className="space-y-3 mt-3">
       {quotaError && (
-        <div className="rounded-xl border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.06)] px-4 py-3 text-xs text-[#f59e0b]">
+        <div className="rounded-xl border px-4 py-3 text-xs text-amber-500" style={{ borderColor: 'rgba(245,158,11,0.3)', backgroundColor: 'rgba(245,158,11,0.06)' }}>
           ⚠️ {quotaError}
         </div>
       )}
       {/* Static pembahasan */}
       {soal.pembahasan && (
-        <div className="rounded-xl border border-[rgba(99,102,241,0.2)] bg-[rgba(99,102,241,0.05)] p-4">
-          <p className="text-xs font-semibold text-[#a5b4fc] mb-1.5">📖 Pembahasan</p>
-          <p className="text-sm text-[#94a3b8] leading-relaxed whitespace-pre-line">{soal.pembahasan}</p>
+        <div className="rounded-xl p-4" style={{ border: '1px solid var(--primary-border)', backgroundColor: 'var(--primary-muted)' }}>
+          <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--primary)' }}>📖 Pembahasan</p>
+          <p className="text-sm t-secondary leading-relaxed whitespace-pre-line">{soal.pembahasan}</p>
         </div>
       )}
 
@@ -96,26 +96,26 @@ function AiPanel({ soal }: { soal: SoalData }) {
       ) : loadingAnalysis ? (
         <Card className="space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-4 w-1/2" /></Card>
       ) : analysis ? (
-        <Card className="space-y-3 border-[rgba(99,102,241,0.2)] bg-[rgba(6,6,9,0.8)]">
+        <Card className="space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#a5b4fc]" />
-            <p className="text-sm font-bold text-[#a5b4fc]">Analisis AI — DCSEF</p>
-            {analysis.from_cache && <span className="rounded bg-[rgba(16,185,129,0.15)] px-1.5 py-0.5 text-[10px] text-[#10b981]">Cached</span>}
+            <Sparkles className="h-4 w-4" style={{ color: 'var(--primary)' }} />
+            <p className="text-sm font-bold" style={{ color: 'var(--primary)' }}>Analisis AI — DCSEF</p>
+            {analysis.from_cache && <span className="rounded px-1.5 py-0.5 text-[10px] text-emerald-500" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>Cached</span>}
           </div>
           {analysis.strategi && (
             <div>
-              <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">Strategi</p>
-              <p className="text-sm text-[#94a3b8] mt-0.5">{analysis.strategi.konsep_utama}</p>
+              <p className="text-xs font-semibold t-muted uppercase tracking-wider">Strategi</p>
+              <p className="text-sm t-secondary mt-0.5">{analysis.strategi.konsep_utama}</p>
               {analysis.strategi.tips_cepat && (
-                <p className="mt-1 text-xs text-[#f59e0b]">💡 {analysis.strategi.tips_cepat}</p>
+                <p className="mt-1 text-xs text-amber-500">💡 {analysis.strategi.tips_cepat}</p>
               )}
             </div>
           )}
           {analysis.output && (
-            <div className="rounded-lg border border-[rgba(16,185,129,0.3)] bg-[rgba(16,185,129,0.07)] p-3">
-              <p className="text-xs font-semibold text-[#10b981]">✅ Jawaban: {analysis.output.opsi_benar}</p>
-              <p className="text-xs text-[#94a3b8] mt-0.5">{analysis.output.cara_cepat}</p>
-              <p className="text-[10px] text-[#475569] mt-1">⏱ Waktu ideal: {analysis.output.waktu_ideal_detik}s</p>
+            <div className="rounded-lg p-3" style={{ border: '1px solid rgba(16,185,129,0.3)', backgroundColor: 'rgba(16,185,129,0.07)' }}>
+              <p className="text-xs font-semibold text-emerald-500">✅ Jawaban: {analysis.output.opsi_benar}</p>
+              <p className="text-xs t-muted mt-0.5">{analysis.output.cara_cepat}</p>
+              <p className="text-[10px] t-muted mt-1">⏱ Waktu ideal: {analysis.output.waktu_ideal_detik}s</p>
             </div>
           )}
         </Card>
@@ -123,25 +123,26 @@ function AiPanel({ soal }: { soal: SoalData }) {
 
       {/* Tanya AI — premium only */}
       {!isPremium ? (
-        <div className="flex items-center gap-2 rounded-xl border border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)] p-3">
-          <Lock className="h-4 w-4 text-[#f59e0b] shrink-0" />
-          <p className="text-xs text-[#64748b]">
-            <span className="font-semibold text-[#f59e0b]">Tanya AI</span> — tersedia untuk Premium & Daily Pass.
+        <div className="flex items-center gap-2 rounded-xl p-3" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
+          <Lock className="h-4 w-4 text-amber-400 shrink-0" />
+          <p className="text-xs t-muted">
+            <span className="font-semibold text-amber-400">Tanya AI</span> — tersedia untuk Premium & Daily Pass.
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border border-[rgba(99,102,241,0.2)] bg-[rgba(6,6,9,0.6)] overflow-hidden">
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--primary-border)', backgroundColor: 'var(--bg-card)' }}>
           <button
             onClick={() => setTanyaOpen(v => !v)}
-            className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-[#a5b4fc]"
+            className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold"
+            style={{ color: 'var(--primary)' }}
           >
             <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Tanya AI</span>
             {tanyaOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
           {tanyaOpen && (
-            <div className="border-t border-[rgba(255,255,255,0.06)] p-4 space-y-3">
+            <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
               {jawaban && (
-                <div className="rounded-lg bg-[rgba(99,102,241,0.08)] p-3 text-sm text-[#94a3b8] leading-relaxed whitespace-pre-line">
+                <div className="rounded-lg p-3 text-sm t-secondary leading-relaxed whitespace-pre-line" style={{ backgroundColor: 'var(--primary-muted)' }}>
                   {jawaban}
                 </div>
               )}
@@ -151,7 +152,7 @@ function AiPanel({ soal }: { soal: SoalData }) {
                   onChange={e => setPertanyaan(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && pertanyaan.trim()) { tanyaMut.mutate(pertanyaan); setPertanyaan(''); }}}
                   placeholder="Tanyakan sesuatu tentang soal ini..."
-                  className="flex-1 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-3 py-2 text-sm text-[#f1f5f9] placeholder-[#475569] outline-none focus:border-[rgba(99,102,241,0.5)]"
+                  className="field-input flex-1"
                 />
                 <Button
                   variant="gradient" size="sm"
@@ -202,40 +203,28 @@ function SetupScreen({ onStart }: { onStart: (tipe: string, mapelIds?: number[])
         {/* Mode harian */}
         <button
           onClick={() => setTipe('harian')}
-          className={cn(
-            'rounded-2xl border p-5 text-left transition-all duration-200',
-            tipe === 'harian'
-              ? 'border-[rgba(99,102,241,0.5)] bg-[rgba(99,102,241,0.08)]'
-              : 'border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)] hover:border-[rgba(99,102,241,0.3)]',
-          )}
-        >
+          className={cn('mode-btn', tipe === 'harian' ? 'active-primary' : '')}>
           <div className="mb-2 text-3xl">📖</div>
-          <p className="font-bold text-[#f1f5f9]">Latihan Harian</p>
-          <p className="mt-1 text-xs text-[#64748b]">Soal acak dari bank soal, tanpa batas waktu per soal</p>
-          <p className="mt-2 text-xs font-medium text-[#a5b4fc]">20 soal · Semua mapel</p>
+          <p className="font-bold t-primary">Latihan Harian</p>
+          <p className="mt-1 text-xs t-muted">Soal acak dari bank soal, tanpa batas waktu per soal</p>
+          <p className="mt-2 text-xs font-medium" style={{ color: 'var(--primary)' }}>20 soal · Semua mapel</p>
         </button>
 
         {/* Mode ujian */}
         <button
           onClick={() => setTipe('ujian')}
-          className={cn(
-            'rounded-2xl border p-5 text-left transition-all duration-200',
-            tipe === 'ujian'
-              ? 'border-[rgba(245,158,11,0.5)] bg-[rgba(245,158,11,0.08)]'
-              : 'border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.02)] hover:border-[rgba(245,158,11,0.3)]',
-          )}
-        >
+          className={cn('mode-btn', tipe === 'ujian' ? 'active-warning' : '')}>
           <div className="mb-2 text-3xl">⏱️</div>
-          <p className="font-bold text-[#f1f5f9]">Simulasi Ujian</p>
-          <p className="mt-1 text-xs text-[#64748b]">Mirip SNBT asli, ada timer dan semua mapel</p>
-          <p className="mt-2 text-xs font-medium text-[#f59e0b]">40 soal · Timed</p>
+          <p className="font-bold t-primary">Simulasi Ujian</p>
+          <p className="mt-1 text-xs t-muted">Mirip SNBT asli, ada timer dan semua mapel</p>
+          <p className="mt-2 text-xs font-medium text-amber-500">40 soal · Timed</p>
         </button>
       </div>
 
       {/* Pilih mapel */}
       <Card>
-        <p className="mb-3 text-sm font-semibold text-[#f1f5f9]">
-          Filter Mapel <span className="font-normal text-[#64748b]">(opsional — kosong = semua mapel)</span>
+        <p className="mb-3 text-sm font-semibold t-primary">
+          Filter Mapel <span className="font-normal t-muted">(opsional — kosong = semua mapel)</span>
         </p>
         <div className="flex flex-wrap gap-2">
           {MAPEL_LIST.map((m) => {
@@ -247,8 +236,8 @@ function SetupScreen({ onStart }: { onStart: (tipe: string, mapelIds?: number[])
                 className={cn(
                   'rounded-lg border px-3 py-1.5 text-xs font-medium transition-all',
                   active
-                    ? 'border-[rgba(99,102,241,0.5)] bg-[rgba(99,102,241,0.15)] text-[#a5b4fc]'
-                    : 'border-[rgba(255,255,255,0.08)] text-[#64748b] hover:border-[rgba(99,102,241,0.3)] hover:text-[#94a3b8]',
+                    ? 'border-sky-500/50 bg-sky-500/10 text-sky-400'
+                    : 'border-theme t-muted hover:border-sky-500/30',
                 )}
               >
                 <span className={cn('mr-1 rounded px-1 py-0.5 text-[10px]', m.colorClass)}>{m.kode}</span>
@@ -283,7 +272,7 @@ function SoalScreen({
   const [elapsed, setElapsed]       = useState(0); // ms
   const [soalStart, setSoalStart]   = useState(Date.now());
   const [submitting, setSubmitting] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Global timer (for exam mode)
   useEffect(() => {
@@ -362,18 +351,18 @@ function SoalScreen({
           <span className={cn('rounded px-2 py-0.5 text-xs font-bold', getMapelColor(soal.mapel.kode))}>
             {soal.mapel.kode}
           </span>
-          <span className="truncate text-xs text-[#64748b]">{soal.sub_materi.nama}</span>
+          <span className="truncate text-xs t-muted">{soal.sub_materi.nama}</span>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', getDifficultyColor(soal.tingkat_kesulitan))}>
             {soal.tingkat_kesulitan}
           </span>
           {soal.is_ai_generated && (
-            <span className="flex items-center gap-0.5 rounded bg-[rgba(99,102,241,0.15)] px-1.5 py-0.5 text-[10px] font-semibold text-[#a5b4fc]">
+            <span className="flex items-center gap-0.5 rounded bg-indigo-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400">
               <Sparkles className="h-2.5 w-2.5" /> AI
             </span>
           )}
-          <span className="flex items-center gap-1 text-xs text-[#64748b]">
+          <span className="flex items-center gap-1 text-xs t-muted">
             <Timer className="h-3.5 w-3.5" />{fmtTime(elapsed)}
           </span>
         </div>
@@ -381,18 +370,18 @@ function SoalScreen({
 
       {/* Progress bar */}
       <div className="space-y-1">
-        <div className="flex justify-between text-xs text-[#475569]">
+        <div className="flex justify-between text-xs t-muted">
           <span>Soal {index + 1} dari {totalSoal}</span>
           <span>{Object.keys(answered).length} dijawab</span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
-          <div className="h-full rounded-full bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] transition-all duration-500" style={{ width: `${pct}%` }} />
+        <div className="h-1.5 progress-track">
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }} />
         </div>
       </div>
 
       {/* Soal card */}
       <Card>
-        <p className="text-sm leading-relaxed text-[#f1f5f9] whitespace-pre-line">{soal.konten}</p>
+        <p className="text-sm leading-relaxed t-primary whitespace-pre-line">{soal.konten}</p>
       </Card>
 
       {/* Pilihan jawaban */}
@@ -402,11 +391,11 @@ function SoalScreen({
           const isCorrect  = currentAnswer?.result?.pilihan_jawaban?.find(x => x.id === p.id)?.is_correct;
           const answered_  = !!currentAnswer;
 
-          let style = 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] hover:border-[rgba(99,102,241,0.4)] hover:bg-[rgba(99,102,241,0.04)]';
+          let btnClass = 'option-btn';
           if (answered_) {
-            if (isCorrect) style = 'border-[rgba(16,185,129,0.5)] bg-[rgba(16,185,129,0.08)]';
-            else if (isSelected) style = 'border-[rgba(239,68,68,0.5)] bg-[rgba(239,68,68,0.08)]';
-            else style = 'border-[rgba(255,255,255,0.05)] bg-transparent opacity-60';
+            if (isCorrect) btnClass = 'option-btn option-btn-correct';
+            else if (isSelected) btnClass = 'option-btn option-btn-wrong';
+            else btnClass = 'option-btn option-btn-dim';
           }
 
           return (
@@ -416,20 +405,20 @@ function SoalScreen({
               disabled={answered_ || submitting}
               className={cn(
                 'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 disabled:cursor-default',
-                style,
+                btnClass,
               )}
             >
               <span className={cn(
                 'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold mt-0.5 transition-colors',
-                answered_ && isCorrect ? 'border-[#10b981] bg-[#10b981] text-white'
-                  : answered_ && isSelected ? 'border-[#ef4444] bg-[#ef4444] text-white'
-                  : 'border-[rgba(255,255,255,0.15)] text-[#64748b]',
+                answered_ && isCorrect ? 'border-emerald-500 bg-emerald-500 text-white'
+                  : answered_ && isSelected ? 'border-red-500 bg-red-500 text-white'
+                  : 'border-theme t-muted',
               )}>
                 {answered_ && isCorrect ? <CheckCircle2 className="h-3.5 w-3.5" />
                   : answered_ && isSelected ? <XCircle className="h-3.5 w-3.5" />
                   : p.label}
               </span>
-              <span className="text-sm text-[#94a3b8] leading-relaxed">{p.konten}</span>
+              <span className="text-sm t-secondary leading-relaxed">{p.konten}</span>
             </button>
           );
         })}
@@ -441,8 +430,8 @@ function SoalScreen({
           <div className={cn(
             'rounded-xl border p-4 text-sm font-medium',
             currentAnswer.result.is_correct
-              ? 'border-[rgba(16,185,129,0.3)] bg-[rgba(16,185,129,0.08)] text-[#34d399]'
-              : 'border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] text-[#f87171]',
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              : 'border-red-500/30 bg-red-500/10 text-red-400',
           )}>
             {currentAnswer.result.is_correct ? '✅ Jawaban benar! +10 poin' : '❌ Kurang tepat — pelajari pembahasannya'}
           </div>
@@ -489,8 +478,8 @@ function ResultScreen({ sesiId, onRestart }: { sesiId: number; onRestart: () => 
     <div className="space-y-6 text-center">
       <div className="text-7xl">{emoji}</div>
       <div>
-        <h2 className="text-3xl font-black text-[#f1f5f9]">{Math.round(skor)}%</h2>
-        <p className="mt-1 text-[#64748b]">
+        <h2 className="text-3xl font-black t-primary">{Math.round(skor)}%</h2>
+        <p className="mt-1 t-muted">
           {h?.total_benar ?? 0} benar dari {h?.total_soal ?? 0} soal
         </p>
       </div>
@@ -498,17 +487,17 @@ function ResultScreen({ sesiId, onRestart }: { sesiId: number; onRestart: () => 
       {/* Per mapel */}
       {h?.per_mapel?.length > 0 && (
         <Card className="text-left">
-          <h3 className="mb-3 font-semibold text-[#f1f5f9]">Hasil per Mapel</h3>
+          <h3 className="mb-3 font-semibold t-primary">Hasil per Mapel</h3>
           <div className="space-y-3">
             {h.per_mapel.map((p: any, i: number) => (
               <div key={i}>
                 <div className="mb-1 flex justify-between text-xs">
                   <span className={cn('rounded px-1.5 py-0.5 font-bold', getMapelColor(p.mapel?.kode ?? ''))}>{p.mapel?.kode}</span>
-                  <span className="text-[#f1f5f9] font-bold">{p.akurasi}%</span>
+                  <span className="t-primary font-bold">{p.akurasi}%</span>
                 </div>
-                <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)]">
+                <div className="h-1.5 progress-track">
                   <div
-                    className={cn('h-full rounded-full', p.akurasi >= 70 ? 'bg-[#10b981]' : p.akurasi >= 50 ? 'bg-[#f59e0b]' : 'bg-[#ef4444]')}
+                    className={cn('h-full rounded-full', p.akurasi >= 70 ? 'bg-emerald-500' : p.akurasi >= 50 ? 'bg-amber-500' : 'bg-red-500')}
                     style={{ width: `${p.akurasi}%` }}
                   />
                 </div>
@@ -535,17 +524,17 @@ function EmptyBankSoal() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
       <div className="text-6xl">📚</div>
-      <h2 className="text-xl font-bold text-[#f1f5f9]">Bank Soal Belum Tersedia</h2>
-      <p className="text-sm text-[#64748b] max-w-sm">
+      <h2 className="text-xl font-bold t-primary">Bank Soal Belum Tersedia</h2>
+      <p className="text-sm t-muted max-w-sm">
         Admin sedang menyiapkan soal berkualitas melalui AI generator.
         Soal akan segera tersedia — pantau terus!
       </p>
-      <div className="rounded-2xl border border-[rgba(99,102,241,0.2)] bg-[rgba(99,102,241,0.06)] p-4 max-w-sm">
+      <div className="rounded-2xl p-4 max-w-sm" style={{ border: '1px solid var(--primary-border)', backgroundColor: 'var(--primary-muted)' }}>
         <div className="flex items-start gap-3 text-left">
-          <AlertTriangle className="h-5 w-5 text-[#f59e0b] shrink-0 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs font-semibold text-[#f1f5f9]">Cara kerja bank soal:</p>
-            <p className="mt-1 text-xs text-[#64748b]">
+            <p className="text-xs font-semibold t-primary">Cara kerja bank soal:</p>
+            <p className="mt-1 text-xs t-muted">
               Admin mengupload materi → AI generate soal → Admin review → Soal dipublikasi ke platformmu.
             </p>
           </div>
@@ -614,8 +603,8 @@ function LatihanContent() {
   if (phase === 'loading') {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#6366f1] border-t-transparent" />
-        <p className="text-sm text-[#64748b]">Menyiapkan soal...</p>
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+        <p className="text-sm t-muted">Menyiapkan soal...</p>
       </div>
     );
   }

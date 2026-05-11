@@ -11,12 +11,29 @@ import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useState, Suspense } from 'react';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const schema = z.object({
   email:    z.string().email('Email tidak valid'),
   password: z.string().min(6, 'Password minimal 6 karakter'),
 });
 type Form = z.infer<typeof schema>;
+
+// Shared style helpers
+const inputStyle = {
+  width: '100%',
+  borderRadius: '0.75rem',
+  border: '1px solid var(--border)',
+  backgroundColor: 'var(--bg-elevated)',
+  color: 'var(--text-primary)',
+  fontSize: '0.875rem',
+  paddingTop: '0.75rem',
+  paddingBottom: '0.75rem',
+  paddingLeft: '2.5rem',
+  paddingRight: '1rem',
+  outline: 'none',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
+} as const;
 
 function LoginForm() {
   const router       = useRouter();
@@ -41,76 +58,100 @@ function LoginForm() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#080810] px-4">
+    <div className="auth-page">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="mb-8 text-center">
-          <Link href="/" className="text-2xl font-black bg-gradient-to-r from-[#6366f1] to-[#a855f7] bg-clip-text text-transparent">
-            ✦ AI Lolos PTN
-          </Link>
-          <h1 className="mt-4 text-xl font-bold text-[#f1f5f9]">Masuk ke Akun</h1>
-          <p className="mt-1 text-sm text-[#64748b]">Lanjutkan perjalanan belajar SNBT-mu</p>
+
+        <div className="mb-4 flex justify-end">
+          <ThemeToggle />
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#141428] p-8">
+        {/* Logo */}
+        <div className="mb-8 text-center">
+          <Link href="/" className="text-2xl font-black"
+            style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-light))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            ✦ AI Lolos PTN
+          </Link>
+          <h1 className="mt-4 text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Masuk ke Akun</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>Lanjutkan perjalanan belajar SNBT-mu</p>
+        </div>
+
+        <div className="auth-card">
           <form onSubmit={handleSubmit((d) => loginMutation.mutate(d))} className="space-y-4">
+
             {/* Email */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#94a3b8]">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#475569]" />
+              <label htmlFor="email" className="auth-label">Email</label>
+              {/* Wrapper: relative so the absolute icon overlays the input */}
+              <div style={{ position: 'relative' }}>
+                <Mail
+                  style={{
+                    position: 'absolute', left: '0.75rem',
+                    top: '50%', transform: 'translateY(-50%)',
+                    width: '1rem', height: '1rem',
+                    color: 'var(--text-muted)', pointerEvents: 'none',
+                  }}
+                />
                 <input
                   {...register('email')}
-                  id="email"
-                  type="email"
-                  placeholder="email@kamu.com"
-                  className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] pl-10 pr-4 py-3 text-sm text-[#f1f5f9] placeholder-[#475569] outline-none focus:border-[rgba(99,102,241,0.5)] focus:ring-1 focus:ring-[rgba(99,102,241,0.3)] transition-all"
+                  id="email" type="email" placeholder="email@kamu.com"
+                  style={inputStyle}
                 />
               </div>
-              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
             </div>
 
             {/* Password */}
             <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-sm font-medium text-[#94a3b8]">Password</label>
-                <Link href="/forgot-password" className="text-xs text-[#6366f1] hover:underline">Lupa password?</Link>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                <label htmlFor="password" className="auth-label" style={{ marginBottom: 0 }}>Password</label>
+                <Link href="/forgot-password" className="auth-link text-xs">Lupa password?</Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#475569]" />
+              <div style={{ position: 'relative' }}>
+                <Lock
+                  style={{
+                    position: 'absolute', left: '0.75rem',
+                    top: '50%', transform: 'translateY(-50%)',
+                    width: '1rem', height: '1rem',
+                    color: 'var(--text-muted)', pointerEvents: 'none',
+                  }}
+                />
                 <input
                   {...register('password')}
                   id="password"
                   type={showPw ? 'text' : 'password'}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] pl-10 pr-11 py-3 text-sm text-[#f1f5f9] placeholder-[#475569] outline-none focus:border-[rgba(99,102,241,0.5)] focus:ring-1 focus:ring-[rgba(99,102,241,0.3)] transition-all"
+                  style={{ ...inputStyle, paddingRight: '2.75rem' }}
                 />
-                <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#475569] hover:text-[#94a3b8]">
-                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  style={{
+                    position: 'absolute', right: '0.75rem',
+                    top: '50%', transform: 'translateY(-50%)',
+                    color: 'var(--text-muted)', background: 'none',
+                    border: 'none', cursor: 'pointer', padding: 0,
+                  }}
+                >
+                  {showPw ? <EyeOff style={{ width: '1rem', height: '1rem' }} /> : <Eye style={{ width: '1rem', height: '1rem' }} />}
                 </button>
               </div>
-              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+              {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
             </div>
 
-            <button
-              type="submit"
-              disabled={loginMutation.isPending}
-              className="mt-2 w-full rounded-xl bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] py-3.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60 transition-opacity"
-            >
+            <button type="submit" disabled={loginMutation.isPending} className="auth-btn" style={{ marginTop: '0.5rem' }}>
               {loginMutation.isPending ? 'Masuk...' : 'Masuk →'}
             </button>
           </form>
 
-          {/* Demo login */}
-          <div className="mt-4 rounded-xl border border-[rgba(99,102,241,0.2)] bg-[rgba(99,102,241,0.06)] p-3 text-center text-xs text-[#64748b]">
-            <span className="font-medium text-[#a5b4fc]">Demo:</span> demo@ailolosiptn.com / demo123!
+          <div className="auth-demo-box" style={{ marginTop: '1rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Demo: </span>
+            demo@ailolosiptn.com / demo123!
           </div>
         </div>
 
-        <p className="mt-5 text-center text-sm text-[#64748b]">
+        <p className="mt-5 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
           Belum punya akun?{' '}
-          <Link href="/register" className="font-semibold text-[#6366f1] hover:underline">Daftar Gratis</Link>
+          <Link href="/register" className="auth-link">Daftar Gratis</Link>
         </p>
       </div>
     </div>
@@ -119,7 +160,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-[#080810]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#6366f1] border-t-transparent"/></div>}>
+    <Suspense fallback={
+      <div className="auth-page">
+        <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', border: '2px solid var(--primary)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+      </div>
+    }>
       <LoginForm />
     </Suspense>
   );

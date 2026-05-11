@@ -131,8 +131,55 @@ body {
 .bg-theme-card     { background-color: var(--bg-card); }
 .bg-theme-elevated { background-color: var(--bg-elevated); }
 .text-theme        { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
 .text-theme-muted  { color: var(--text-muted); }
 .border-theme      { border-color: var(--border); }
+.border-primary-theme { border-color: var(--primary-border); }
+
+/* Alias classes matching what Tailwind hardcodes were doing */
+/* text-[#f1f5f9] equivalent → use these classes */
+.t-primary   { color: var(--text-primary); }
+.t-secondary { color: var(--text-secondary); }
+.t-muted     { color: var(--text-muted); }
+
+/* bg card/elevated equivalent */
+.bg-card-theme     { background-color: var(--bg-card); }
+.bg-elevated-theme { background-color: var(--bg-elevated); }
+
+/* Progress bar track background */
+.progress-track {
+  background-color: var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+/* answer/option button themes */
+.option-btn {
+  border: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.option-btn:hover:not(:disabled) {
+  border-color: var(--primary-border);
+  background-color: var(--primary-muted);
+}
+.option-btn-correct { border-color: rgba(16,185,129,0.5) !important; background-color: rgba(16,185,129,0.08) !important; }
+.option-btn-wrong   { border-color: rgba(239,68,68,0.5)  !important; background-color: rgba(239,68,68,0.08)  !important; }
+.option-btn-dim     { border-color: var(--border) !important; opacity: 0.55; }
+
+/* mode selection cards */
+.mode-btn {
+  border: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  text-align: left;
+  transition: border-color 0.2s, background-color 0.2s;
+  cursor: pointer;
+}
+.mode-btn:hover { border-color: var(--primary-border); }
+.mode-btn.active-primary { border-color: var(--primary) !important; background-color: var(--primary-muted) !important; }
+.mode-btn.active-warning { border-color: rgba(245,158,11,0.5) !important; background-color: rgba(245,158,11,0.08) !important; }
 
 /* ── Primary sky-blue helpers ── */
 .bg-primary        { background-color: var(--primary); }
@@ -195,9 +242,33 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
-   Admin layout — always dark
-   (Admin panels look better dark regardless of OS mode)
+   Hover utility classes — safe for Server Components
+   (replaces onMouseEnter/onMouseLeave JS handlers)
 ═══════════════════════════════════════════════════════ */
+.hover-text-primary:hover      { color: var(--text-primary) !important; }
+.hover-text-muted:hover        { color: var(--text-muted) !important; }
+.hover-primary:hover           { color: var(--primary) !important; }
+
+.card-hover {
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  border-color: var(--primary-border) !important;
+  background-color: var(--bg-elevated) !important;
+}
+
+.nav-link {
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+.nav-link:hover { color: var(--text-primary); }
+
+.footer-link {
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+.footer-link:hover { color: var(--primary); }
+
 .admin-layout {
   --bg-base:     #07070f;
   --bg-card:     #0d1117;
@@ -208,3 +279,138 @@ body {
   --border:          rgba(255, 255, 255, 0.07);
   --border-highlight:rgba(14, 165, 233, 0.40);
 }
+
+/* ═══════════════════════════════════════════════════════
+   Auth form — theme-aware input/card styles
+═══════════════════════════════════════════════════════ */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-base);
+  padding: 2rem 1rem;
+}
+
+.auth-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+}
+
+.auth-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-muted);
+  pointer-events: none;
+  display: block;
+  flex-shrink: 0;
+}
+
+.auth-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.auth-input::placeholder { color: var(--text-muted); opacity: 1; }
+.auth-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+
+}
+
+.auth-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+}
+
+.auth-link {
+  color: var(--primary);
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.auth-link:hover { opacity: 0.75; text-decoration: underline; }
+
+.auth-btn {
+  width: 100%;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.875rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(14,165,233,0.28);
+  transition: opacity 0.15s, transform 0.15s;
+}
+.auth-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+.auth-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.auth-demo-box {
+  border-radius: 0.75rem;
+  border: 1px solid var(--primary-border);
+  background-color: var(--primary-muted);
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Page & Dashboard utility classes (theme-aware)
+═══════════════════════════════════════════════════════ */
+.stat-card {
+  border-radius: 1rem; padding: 1.25rem;
+  border: 1px solid var(--border); background-color: var(--bg-card);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.stat-card:hover { border-color: var(--primary-border); background-color: var(--bg-elevated); }
+
+.section-card {
+  border-radius: 1rem; padding: 1.25rem;
+  border: 1px solid var(--border); background-color: var(--bg-card);
+}
+
+.field-input {
+  width: 100%; border-radius: 0.625rem;
+  border: 1px solid var(--border); background-color: var(--bg-elevated);
+  color: var(--text-primary); font-size: 0.875rem;
+  padding: 0.625rem 0.875rem; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-input::placeholder { color: var(--text-muted); }
+.field-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14,165,233,0.15); }
+
+.field-select {
+  border-radius: 0.625rem; border: 1px solid var(--border);
+  background-color: var(--bg-elevated); color: var(--text-primary);
+  font-size: 0.875rem; padding: 0.625rem 0.875rem; outline: none; cursor: pointer;
+}
+.field-select:focus { border-color: var(--primary); }
+
+.table-row-hover:hover { background-color: var(--bg-elevated); }
+.divider { border-color: var(--border); }
+.text-muted-theme { color: var(--text-muted); }
+.text-secondary-theme { color: var(--text-secondary); }

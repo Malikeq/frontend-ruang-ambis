@@ -130,6 +130,14 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T> {
-  data: { data: T[]; total: number; per_page: number; current_page: number; last_page: number };
+/** Paginated data envelope (matches Laravel's paginator shape) */
+export interface PaginatedData<T> {
+  data: T[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
 }
+
+/** ApiResponse whose data field is a paginated collection */
+export type PaginatedResponse<T> = ApiResponse<PaginatedData<T>>;

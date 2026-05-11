@@ -41,9 +41,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={cn(
-      'flex flex-col bg-[#0d0d1f] border-r border-[rgba(255,255,255,0.06)]',
+      'flex flex-col border-r',
       mobile ? 'w-72 p-4' : 'hidden lg:flex w-64 p-5 sticky top-0 h-screen',
-    )}>
+    )}
+      style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
       {/* Logo */}
       <Link href={ROUTES.dashboard} className="mb-8 text-lg font-black bg-gradient-to-r from-[#0ea5e9] to-[#38bdf8] bg-clip-text text-transparent">
         ✦ AI Lolos PTN
@@ -90,7 +91,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* User card */}
       {user && (
-        <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3">
+        <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
           <div className="flex items-center gap-3 mb-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-xs font-bold text-white">
               {getInitials(user.name)}
@@ -127,7 +128,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <div className="flex min-h-screen bg-[#080810] text-[#f1f5f9]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: "'Inter', sans-serif" }}>
       {/* Desktop sidebar */}
       <Sidebar />
 
@@ -144,7 +145,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Mobile topbar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] bg-[rgba(8,8,16,0.9)] backdrop-blur-xl px-4 py-3 lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between backdrop-blur-xl px-4 py-3 lg:hidden"
+          style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'color-mix(in srgb, var(--bg-base) 90%, transparent)' }}>
           <button onClick={() => setSidebarOpen(true)} className="text-[#64748b] hover:text-[#f1f5f9]">
             <Menu className="h-5 w-5" />
           </button>
