@@ -1,0 +1,5 @@
+name = "frontend-ruang-ambis"
+
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service  = "frontend-ruang-ambis"
