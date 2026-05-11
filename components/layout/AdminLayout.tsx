@@ -65,7 +65,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     )}>
       {/* Logo */}
       <div className="mb-6 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#0ea5e9] to-[#0284c7]">
           <Shield className="h-4 w-4 text-white" />
         </div>
         <div>
@@ -95,7 +95,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     className={cn(
                       'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
                       active
-                        ? 'bg-[rgba(99,102,241,0.15)] text-[#a5b4fc] border border-[rgba(99,102,241,0.25)]'
+                        ? 'bg-[rgba(14,165,233,0.15)] text-[#38bdf8] border border-[rgba(14,165,233,0.25)]'
                         : 'text-[#64748b] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#94a3b8]',
                     )}
                   >
@@ -146,7 +146,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#060609] text-[#f1f5f9]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="admin-layout dark flex min-h-screen bg-[#060609] text-[#f1f5f9]" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Desktop sidebar */}
       <Sidebar />
 
@@ -168,7 +168,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-[#6366f1]" />
+            <Shield className="h-4 w-4 text-[#0ea5e9]" />
             <span className="text-sm font-bold text-[#f1f5f9]">Admin Panel</span>
           </div>
           {user && (

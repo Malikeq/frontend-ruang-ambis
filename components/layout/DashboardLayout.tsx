@@ -45,7 +45,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       mobile ? 'w-72 p-4' : 'hidden lg:flex w-64 p-5 sticky top-0 h-screen',
     )}>
       {/* Logo */}
-      <Link href={ROUTES.dashboard} className="mb-8 text-lg font-black bg-gradient-to-r from-[#6366f1] to-[#a855f7] bg-clip-text text-transparent">
+      <Link href={ROUTES.dashboard} className="mb-8 text-lg font-black bg-gradient-to-r from-[#0ea5e9] to-[#38bdf8] bg-clip-text text-transparent">
         ✦ AI Lolos PTN
       </Link>
 
@@ -61,7 +61,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               className={cn(
                 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
                 active
-                  ? 'bg-[rgba(99,102,241,0.15)] text-[#a5b4fc] border border-[rgba(99,102,241,0.25)]'
+                  ? 'bg-[rgba(14,165,233,0.15)] text-[#38bdf8] border border-[rgba(14,165,233,0.25)]'
                   : 'text-[#64748b] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#94a3b8]',
               )}
             >
@@ -76,13 +76,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {user?.tier === 'free' && (
         <Link
           href={ROUTES.payment}
-          className="mb-3 flex items-center gap-2.5 rounded-xl border border-[rgba(139,92,246,0.3)] bg-gradient-to-r from-[rgba(99,102,241,0.12)] to-[rgba(139,92,246,0.06)] p-3 hover:border-[rgba(139,92,246,0.5)] transition-all group"
+          className="mb-3 flex items-center gap-2.5 rounded-xl border border-[rgba(14,165,233,0.3)] bg-gradient-to-r from-[rgba(14,165,233,0.10)] to-[rgba(2,132,199,0.06)] p-3 hover:border-[rgba(14,165,233,0.5)] transition-all group"
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6]">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#0ea5e9] to-[#0284c7]">
             <CreditCard className="h-3.5 w-3.5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-[#a5b4fc]">Upgrade Premium</p>
+            <p className="text-xs font-bold text-[#38bdf8]">Upgrade Premium</p>
             <p className="text-[10px] text-[#64748b]">Soal unlimited · AI 30x/hari</p>
           </div>
         </Link>
@@ -92,7 +92,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {user && (
         <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3">
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-xs font-bold text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-xs font-bold text-white">
               {getInitials(user.name)}
             </div>
             <div className="min-w-0">
@@ -148,9 +148,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <button onClick={() => setSidebarOpen(true)} className="text-[#64748b] hover:text-[#f1f5f9]">
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-sm font-black bg-gradient-to-r from-[#6366f1] to-[#a855f7] bg-clip-text text-transparent">✦ AI Lolos PTN</span>
+          <span className="text-sm font-black bg-gradient-to-r from-[#0ea5e9] to-[#38bdf8] bg-clip-text text-transparent">✦ AI Lolos PTN</span>
           {user && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-xs font-bold text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-xs font-bold text-white">
               {getInitials(user.name)}
             </div>
           )}

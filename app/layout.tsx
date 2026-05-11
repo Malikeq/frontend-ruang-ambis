@@ -12,10 +12,35 @@ export const metadata: Metadata = {
   openGraph: { type: 'website', locale: 'id_ID', siteName: 'AI Lolos PTN' },
 };
 
+// Inline script — runs before React hydrates, prevents flash of wrong theme
+const themeScript = `
+(function() {
+  try {
+    var stored = localStorage.getItem('theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var theme = stored || (prefersDark ? 'dark' : 'light');
+    document.documentElement.classList.add(theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch(e) {}
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={inter.variable}>
-      <body className="min-h-screen bg-[#080810] text-[#f1f5f9] antialiased" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+    <html lang="id" className={inter.variable} suppressHydrationWarning>
+      <head>
+        {/* Prevent FOUC — inject theme class before paint */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body
+        className="min-h-screen antialiased"
+        style={{
+          backgroundColor: 'var(--bg-base)',
+          color: 'var(--text-primary)',
+          fontFamily: 'var(--font-inter), system-ui, sans-serif',
+          transition: 'background-color 0.3s ease, color 0.3s ease',
+        }}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

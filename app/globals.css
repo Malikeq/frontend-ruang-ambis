@@ -1,77 +1,210 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════
+   CSS Custom Properties — auto light/dark theme
+   Primary accent: Sky Blue (#0ea5e9)
+═══════════════════════════════════════════════════════ */
+:root {
+  /* ── Brand / Accent (Sky Blue) ── */
+  --primary:       #0ea5e9;
+  --primary-light: #38bdf8;
+  --primary-dark:  #0284c7;
+  --primary-muted: rgba(14, 165, 233, 0.15);
+  --primary-border:rgba(14, 165, 233, 0.30);
+
+  /* ── Light mode defaults ── */
+  --bg-base:     #f0f9ff;
+  --bg-card:     #ffffff;
+  --bg-elevated: #e0f2fe;
+  --bg-overlay:  rgba(14, 165, 233, 0.05);
+
+  --text-primary:   #0c1a2e;
+  --text-secondary: #1e3a5f;
+  --text-muted:     #64748b;
+
+  --border:     rgba(14, 165, 233, 0.15);
+  --border-highlight: rgba(14, 165, 233, 0.45);
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.10);
+  --shadow-glow:0 0 40px rgba(14, 165, 233, 0.25);
+}
+
+/* ── Dark mode: auto-detect from OS ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-base:     #07070f;
+    --bg-card:     #0d1117;
+    --bg-elevated: #141428;
+    --bg-overlay:  rgba(14, 165, 233, 0.04);
+
+    --text-primary:   #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted:     #475569;
+
+    --border:          rgba(255, 255, 255, 0.07);
+    --border-highlight:rgba(14, 165, 233, 0.40);
+
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.30);
+    --shadow-md:  0 4px 20px rgba(0,0,0,0.40);
+    --shadow-glow:0 0 50px rgba(14, 165, 233, 0.20);
+  }
+}
+
+/* ── Manual class overrides (for JS toggle) ── */
+html.dark {
+  --bg-base:     #07070f;
+  --bg-card:     #0d1117;
+  --bg-elevated: #141428;
+  --bg-overlay:  rgba(14, 165, 233, 0.04);
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+  --border:          rgba(255, 255, 255, 0.07);
+  --border-highlight:rgba(14, 165, 233, 0.40);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.30);
+  --shadow-md:  0 4px 20px rgba(0,0,0,0.40);
+  --shadow-glow:0 0 50px rgba(14, 165, 233, 0.20);
+}
+
+html.light {
+  --bg-base:     #f0f9ff;
+  --bg-card:     #ffffff;
+  --bg-elevated: #e0f2fe;
+  --bg-overlay:  rgba(14, 165, 233, 0.05);
+  --text-primary:   #0c1a2e;
+  --text-secondary: #1e3a5f;
+  --text-muted:     #64748b;
+  --border:          rgba(14, 165, 233, 0.15);
+  --border-highlight:rgba(14, 165, 233, 0.45);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.10);
+  --shadow-glow:0 0 40px rgba(14, 165, 233, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Tailwind v4 theme tokens — updated to Sky Blue
+═══════════════════════════════════════════════════════ */
 @theme {
-  --color-primary:    #6366f1;
-  --color-secondary:  #8b5cf6;
-  --color-accent:     #06b6d4;
+  --color-primary:    #0ea5e9;
+  --color-secondary:  #0284c7;
+  --color-accent:     #38bdf8;
   --color-success:    #10b981;
   --color-warning:    #f59e0b;
   --color-error:      #ef4444;
 
-  --color-bg-base:    #080810;
-  --color-bg-card:    #141428;
-  --color-bg-elevated:#1a1a35;
-
-  --color-text-primary:   #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted:     #475569;
-
-  --color-border:     rgba(255, 255, 255, 0.08);
-  --color-border-highlight: rgba(99, 102, 241, 0.4);
+  /* Map to CSS vars so components auto-switch */
+  --color-bg-base:     var(--bg-base);
+  --color-bg-card:     var(--bg-card);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-text-primary:   var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted:     var(--text-muted);
+  --color-border:         var(--border);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ═══════════════════════════════════════════════════════
+   Base Styles
+═══════════════════════════════════════════════════════ */
+* { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background-color: #080810;
-  color: #f1f5f9;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Scrollbar */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+::-webkit-scrollbar-thumb { background: rgba(14, 165, 233, 0.30); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(14, 165, 233, 0.55); }
 
-/* Animations */
+/* ═══════════════════════════════════════════════════════
+   Semantic utility classes (theme-aware)
+═══════════════════════════════════════════════════════ */
+.bg-theme-base     { background-color: var(--bg-base); }
+.bg-theme-card     { background-color: var(--bg-card); }
+.bg-theme-elevated { background-color: var(--bg-elevated); }
+.text-theme        { color: var(--text-primary); }
+.text-theme-muted  { color: var(--text-muted); }
+.border-theme      { border-color: var(--border); }
+
+/* ── Primary sky-blue helpers ── */
+.bg-primary        { background-color: var(--primary); }
+.text-primary      { color: var(--primary); }
+.border-primary    { border-color: var(--primary); }
+.shadow-primary    { box-shadow: var(--shadow-glow); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  box-shadow: 0 0 30px rgba(14, 165, 233, 0.30);
+}
+.btn-primary:hover {
+  box-shadow: 0 0 50px rgba(14, 165, 233, 0.50);
+  opacity: 0.93;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Animations
+═══════════════════════════════════════════════════════ */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes slide-in-right {
   from { opacity: 0; transform: translateX(20px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
-  50%       { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(14, 165, 233, 0.30); }
+  50%       { box-shadow: 0 0 45px rgba(14, 165, 233, 0.60); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
 }
 
 .animate-fade-in    { animation: fade-in 0.4s ease-out; }
 .animate-slide-in   { animation: slide-in-right 0.3s ease-out; }
 .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-float      { animation: float 3s ease-in-out infinite; }
 
-/* Glass card */
+/* ═══════════════════════════════════════════════════════
+   Glass card (theme-aware)
+═══════════════════════════════════════════════════════ */
 .glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
 }
 
-/* Gradient text */
+/* ═══════════════════════════════════════════════════════
+   Gradient text helper
+═══════════════════════════════════════════════════════ */
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1, #a855f7, #06b6d4);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light), #06b6d4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Admin layout — always dark
+   (Admin panels look better dark regardless of OS mode)
+═══════════════════════════════════════════════════════ */
+.admin-layout {
+  --bg-base:     #07070f;
+  --bg-card:     #0d1117;
+  --bg-elevated: #141428;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+  --border:          rgba(255, 255, 255, 0.07);
+  --border-highlight:rgba(14, 165, 233, 0.40);
 }
