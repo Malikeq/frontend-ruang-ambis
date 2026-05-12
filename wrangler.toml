@@ -1,4 +1,4 @@
-name               = "frontend-ruang-ambis"
+name               = "frontend-ruang-ambis-fix-1"
 main               = ".open-next/worker.js"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
