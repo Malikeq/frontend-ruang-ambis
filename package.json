@@ -9,11 +9,10 @@
     "build:worker": "next build && npx opennextjs-cloudflare@latest build",
     "deploy": "npm run build:worker && npx wrangler deploy",
     "start": "next start",
-    "pages:build": "npx @cloudflare/next-on-pages",
     "lint": "eslint ."
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
+    "@opennextjs/cloudflare": "^1.19.9",
     "@hookform/resolvers": "^3.9.1",
     "@tanstack/react-query": "^5.64.2",
     "axios": "^1.7.9",
