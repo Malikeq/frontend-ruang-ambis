@@ -80,7 +80,16 @@ export const leaderboardApi = {
 
 // ── Latihan ──────────────────────────────────────────────
 export const latihanApi = {
-  mulai:   (tipe: string, mapel_ids?: number[]) => axiosInstance.post('/latihan/mulai', { tipe, mapel_ids }),
+  mulai:        (data: {
+    tipe: string;
+    mode?: string;
+    mapel_ids?: number[];
+    sub_materi_ids?: number[];
+    jumlah_soal?: number;
+    timer_menit?: number;
+  }) => axiosInstance.post('/latihan/mulai', data),
+  getSubMateri: (mapelId: number | null) =>
+    axiosInstance.get('/sub-materi', { params: mapelId ? { mapel_id: mapelId } : {} }),
   getSoal: (sesiId: number, index: number)      => axiosInstance.get(`/latihan/${sesiId}/soal/${index}`),
   jawab:   (sesiId: number, data: any)          => axiosInstance.post(`/latihan/${sesiId}/jawab`, data),
   selesai: (sesiId: number)                     => axiosInstance.post(`/latihan/${sesiId}/selesai`),

@@ -75,7 +75,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         href={href}
         onClick={() => setSidebarOpen(false)}
         className={cn(
-          'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+          'group relative flex items-center gap-3 rounded-xl px-3.5 py-3 text-[15px] font-medium transition-all duration-200',
           active ? 'text-white' : 'hover:text-[var(--text-primary)]',
         )}
         style={active ? {
@@ -112,7 +112,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         style={{ backgroundColor: 'var(--bg-card)', borderRight: '1px solid var(--border)' }}
       >
         {/* Logo area */}
-        <div className="mb-8">
+        <div className="mb-10">
           <div className="flex items-center justify-between mb-1">
             <Link href={ROUTES.dashboard}
               className="text-lg font-black"
@@ -132,14 +132,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-5">
+        <nav className="flex-1 space-y-7">
           {NAV_GROUPS.map(({ label, items, accent }) => (
             <div key={label}>
-              <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-widest"
+              <p className="mb-2.5 px-3 text-[11px] font-bold uppercase tracking-widest"
                 style={{ color: accent ? 'var(--primary)' : 'var(--text-muted)', opacity: accent ? 1 : 0.7 }}>
                 {label}
               </p>
-              <div className="space-y-0.5">
+              <div className="space-y-1.5">
                 {items.map(item => (
                   <NavItem key={item.href} {...item} accent={!!accent} />
                 ))}

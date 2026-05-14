@@ -15,9 +15,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const base = 'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed select-none';
 
     const sizes = {
-      sm:  'h-8  px-3 text-xs',
-      md:  'h-10 px-4 text-sm',
-      lg:  'h-12 px-6 text-sm',
+      sm:  'h-9  px-4 text-sm',
+      md:  'h-11 px-5 text-base',
+      lg:  'h-13 px-7 text-base',
     };
 
     // Variant styles use CSS variables — adapt to light/dark automatically

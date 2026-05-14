@@ -10,7 +10,7 @@ interface CardProps {
 export function Card({ children, className, hover, style }: CardProps) {
   return (
     <div
-      className={cn('rounded-2xl p-5 transition-all duration-200', hover && 'cursor-pointer', className)}
+      className={cn('rounded-2xl p-6 transition-all duration-200', hover && 'cursor-pointer', className)}
       style={{
         border: '1px solid var(--border)',
         backgroundColor: 'var(--bg-card)',

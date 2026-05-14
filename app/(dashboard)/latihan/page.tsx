@@ -178,88 +178,280 @@ function fmtTime(ms: number) {
   return `${m}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// ── Toggle pill ───────────────────────────────────────────
+function TogglePill({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-2 text-xs font-semibold transition-colors"
+      style={{ color: on ? 'var(--primary)' : 'var(--text-muted)' }}>
+      <div className="relative w-11 h-6 rounded-full transition-all duration-300 shrink-0"
+        style={{ backgroundColor: on ? 'var(--primary)' : 'var(--border)' }}>
+        <div className="absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all duration-300"
+          style={{ left: on ? '1.375rem' : '0.25rem' }} />
+      </div>
+      {on ? 'Aktif' : 'Mati'}
+    </button>
+  );
+}
+
+// ── Latihan modes ─────────────────────────────────────────
+const LATIHAN_MODES = [
+  { id: 'acak',      emoji: '🎲', label: 'Acak',             desc: 'Soal random dari mapel dipilih',     tipe: 'harian' },
+  { id: 'kelemahan', emoji: '🎯', label: 'Fokus Kelemahan',  desc: 'Soal dari area yang sering salah',   tipe: 'harian' },
+  { id: 'per_bab',   emoji: '📚', label: 'Per Bab / Topik',  desc: 'Pilih bab atau sub-materi spesifik', tipe: 'harian' },
+  { id: 'tryout',    emoji: '⏱️', label: 'Try Out',          desc: 'Simulasi SNBT dengan countdown',     tipe: 'ujian'  },
+] as const;
+
+type StartConfig = {
+  tipe: string; mode: string;
+  mapelIds?: number[]; subMateriIds?: number[];
+  jumlahSoal: number; timerMenit?: number;
+};
+
 // ── Setup screen ───────────────────────────────────────────
-function SetupScreen({ onStart }: { onStart: (tipe: string, mapelIds?: number[]) => void }) {
-  const [tipe, setTipe] = useState<'harian' | 'ujian'>('harian');
-  const [mapelIds, setMapelIds] = useState<number[]>([]);
+function SetupScreen({ onStart }: { onStart: (cfg: StartConfig) => void }) {
   const searchParams = useSearchParams();
+  type SelMapel = { id: number | null; kode: string; nama: string; colorClass: string };
+  const [sel, setSel]                       = useState<SelMapel | null>(null);
+  const [mode, setMode]                     = useState<string>('acak');
+  const [jumlahSoal, setJumlahSoal]         = useState(20);
+  const [timerOn, setTimerOn]               = useState(false);
+  const [timerMenit, setTimerMenit]         = useState(30);
+  const [subMateriSel, setSubMateriSel]     = useState<number[]>([]);
+
+  const { data: subMateriRes, isLoading: loadingSub } = useQuery({
+    queryKey: ['sub-materi', sel?.id],
+    queryFn: () => latihanApi.getSubMateri(sel?.id ?? null),
+    enabled: !!sel && mode === 'per_bab',
+    staleTime: 5 * 60 * 1000,
+  });
+  const subMateriList: { id: number; nama: string }[] = subMateriRes?.data?.data ?? [];
 
   useEffect(() => {
-    const t = searchParams.get('tipe');
-    if (t === 'ujian') setTipe('ujian');
+    if (searchParams.get('tipe') === 'ujian') setMode('tryout');
   }, [searchParams]);
 
-  const toggleMapel = (id: number) =>
-    setMapelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  useEffect(() => {
+    setTimerOn(mode === 'tryout');
+    setSubMateriSel([]);
+  }, [mode]);
+
+  function openModal(mapel: SelMapel) {
+    setSel(mapel); setMode('acak'); setJumlahSoal(20); setTimerOn(false); setTimerMenit(30); setSubMateriSel([]);
+  }
+
+  function toggleSub(id: number) {
+    setSubMateriSel(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  function handleStart() {
+    if (!sel) return;
+    const selMode = LATIHAN_MODES.find(m => m.id === mode)!;
+    onStart({
+      tipe: selMode.tipe, mode,
+      mapelIds:     sel.id !== null ? [sel.id] : undefined,
+      subMateriIds: subMateriSel.length > 0 ? subMateriSel : undefined,
+      jumlahSoal,
+      timerMenit:   timerOn ? timerMenit : undefined,
+    });
+    setSel(null);
+  }
+
+  const activeMode = LATIHAN_MODES.find(m => m.id === mode)!;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Latihan Soal"
-        description="Pilih mode latihan dan mulai belajar SNBT"
-      />
+    <div className="space-y-5">
+      <PageHeader title="Pilih Materi" description="Klik mapel yang ingin kamu kerjakan hari ini" />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {/* Mode harian */}
-        <button
-          onClick={() => setTipe('harian')}
-          className={cn('mode-btn', tipe === 'harian' ? 'active-primary' : '')}>
-          <div className="mb-2 text-3xl">📖</div>
-          <p className="font-bold t-primary">Latihan Harian</p>
-          <p className="mt-1 text-xs t-muted">Soal acak dari bank soal, tanpa batas waktu per soal</p>
-          <p className="mt-2 text-xs font-medium" style={{ color: 'var(--primary)' }}>20 soal · Semua mapel</p>
-        </button>
+      {/* All-mapel shortcut */}
+      <button
+        onClick={() => openModal({ id: null, kode: '🎯', nama: 'Semua Mapel', colorClass: '' })}
+        className="w-full flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-200"
+        style={{ border: '1px solid var(--primary-border)', backgroundColor: 'var(--primary-muted)' }}
+        onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+      >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
+          style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }}>🎯</div>
+        <div className="flex-1">
+          <p className="font-bold t-primary text-base">Semua Mapel</p>
+          <p className="text-sm t-muted mt-0.5">Campuran acak semua mata pelajaran SNBT</p>
+        </div>
+        <ChevronRight className="h-5 w-5 t-muted shrink-0" />
+      </button>
 
-        {/* Mode ujian */}
-        <button
-          onClick={() => setTipe('ujian')}
-          className={cn('mode-btn', tipe === 'ujian' ? 'active-warning' : '')}>
-          <div className="mb-2 text-3xl">⏱️</div>
-          <p className="font-bold t-primary">Simulasi Ujian</p>
-          <p className="mt-1 text-xs t-muted">Mirip SNBT asli, ada timer dan semua mapel</p>
-          <p className="mt-2 text-xs font-medium text-amber-500">40 soal · Timed</p>
-        </button>
+      {/* Per-mapel cards */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest t-muted mb-3 px-1">Atau pilih per Mapel</p>
+        <div className="grid grid-cols-1 gap-2">
+          {MAPEL_LIST.map((m, idx) => (
+            <button key={m.kode}
+              onClick={() => openModal({ id: idx + 1, kode: m.kode, nama: m.nama, colorClass: m.colorClass })}
+              className="flex items-center gap-4 rounded-2xl p-4 text-left transition-all duration-200 group"
+              style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary-border)'; e.currentTarget.style.backgroundColor = 'var(--bg-elevated)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.backgroundColor = 'var(--bg-card)'; }}
+            >
+              <span className={cn('shrink-0 rounded-xl px-3 py-2 text-sm font-black min-w-[3.5rem] text-center', m.colorClass)}>{m.kode}</span>
+              <div className="flex-1 min-w-0"><p className="text-sm font-semibold t-primary leading-snug">{m.nama}</p></div>
+              <ChevronRight className="h-4 w-4 t-muted shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Pilih mapel */}
-      <Card>
-        <p className="mb-3 text-sm font-semibold t-primary">
-          Filter Mapel <span className="font-normal t-muted">(opsional — kosong = semua mapel)</span>
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {MAPEL_LIST.map((m) => {
-            const active = mapelIds.includes(MAPEL_LIST.indexOf(m) + 1);
-            return (
-              <button
-                key={m.kode}
-                onClick={() => toggleMapel(MAPEL_LIST.indexOf(m) + 1)}
-                className={cn(
-                  'rounded-lg border px-3 py-1.5 text-xs font-medium transition-all',
-                  active
-                    ? 'border-sky-500/50 bg-sky-500/10 text-sky-400'
-                    : 'border-theme t-muted hover:border-sky-500/30',
-                )}
-              >
-                <span className={cn('mr-1 rounded px-1 py-0.5 text-[10px]', m.colorClass)}>{m.kode}</span>
-                {m.nama.split(' ').slice(0, 2).join(' ')}
-              </button>
-            );
-          })}
-        </div>
-      </Card>
+      {/* ── Bottom-sheet modal ── */}
+      {sel && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setSel(null); }}>
+          <div className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl animate-fade-in overflow-y-auto"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: '0 -12px 50px rgba(0,0,0,0.35)', maxHeight: '92dvh' }}>
+            <div className="p-6 space-y-6">
 
-      <Button
-        variant="gradient"
-        size="lg"
-        className="w-full"
-        onClick={() => onStart(tipe, mapelIds.length > 0 ? mapelIds : undefined)}
-      >
-        <BookOpen className="h-4 w-4" />
-        Mulai {tipe === 'ujian' ? 'Simulasi' : 'Latihan'}
-      </Button>
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {sel.id !== null
+                    ? <span className={cn('rounded-xl px-3 py-2 text-sm font-black', sel.colorClass)}>{sel.kode}</span>
+                    : <span className="text-2xl">🎯</span>}
+                  <div>
+                    <h3 className="font-bold t-primary text-base leading-tight">{sel.nama}</h3>
+                    <p className="text-xs t-muted">Atur sesi latihanmu</p>
+                  </div>
+                </div>
+                <button onClick={() => setSel(null)}
+                  className="h-8 w-8 rounded-full flex items-center justify-center t-muted text-base transition-colors"
+                  style={{ backgroundColor: 'var(--bg-elevated)' }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--border)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-elevated)')}>✕</button>
+              </div>
+
+              {/* ── Mode Latihan ── */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest t-muted mb-3">Mode Latihan</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {LATIHAN_MODES.map(m => {
+                    const active = mode === m.id;
+                    const warn = m.id === 'tryout';
+                    return (
+                      <button key={m.id} onClick={() => setMode(m.id)}
+                        className="rounded-2xl p-4 text-left transition-all duration-200"
+                        style={active ? {
+                          border: `2px solid ${warn ? 'rgb(245,158,11)' : 'var(--primary)'}`,
+                          backgroundColor: warn ? 'rgba(245,158,11,0.08)' : 'var(--primary-muted)',
+                        } : { border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
+                        <div className="text-xl mb-1.5">{m.emoji}</div>
+                        <p className="text-sm font-bold t-primary">{m.label}</p>
+                        <p className="text-[10px] t-muted mt-0.5 leading-snug">{m.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── Sub-Materi (Per Bab only) ── */}
+              {mode === 'per_bab' && (
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest t-muted mb-3">
+                    Pilih Topik / Bab <span className="normal-case font-normal ml-1">(kosong = semua bab)</span>
+                  </p>
+                  {loadingSub ? (
+                    <div className="flex items-center gap-2 t-muted text-sm py-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2"
+                        style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+                      Memuat topik...
+                    </div>
+                  ) : subMateriList.length === 0 ? (
+                    <p className="text-sm t-muted py-2">Tidak ada topik tersedia.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-y-auto pr-1">
+                      {subMateriList.map(s => {
+                        const active = subMateriSel.includes(s.id);
+                        return (
+                          <button key={s.id} onClick={() => toggleSub(s.id)}
+                            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-150"
+                            style={active ? {
+                              border: '1.5px solid var(--primary)', backgroundColor: 'var(--primary-muted)',
+                            } : { border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
+                            <div className="flex-1 text-sm t-primary font-medium">{s.nama}</div>
+                            {active && <span className="h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0"
+                              style={{ background: 'var(--primary)' }}>✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Jumlah Soal — stepper ── */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest t-muted mb-3">Jumlah Soal</p>
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setJumlahSoal(v => Math.max(5, v - 5))}
+                    className="h-11 w-11 rounded-xl text-xl font-bold flex items-center justify-center transition-all"
+                    style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary-border)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>−</button>
+                  <div className="flex-1 text-center">
+                    <p className="text-3xl font-black t-primary">{jumlahSoal}</p>
+                    <p className="text-[11px] t-muted">soal</p>
+                  </div>
+                  <button onClick={() => setJumlahSoal(v => Math.min(50, v + 5))}
+                    className="h-11 w-11 rounded-xl text-xl font-bold flex items-center justify-center transition-all"
+                    style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary-border)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>+</button>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  {[10, 20, 30, 40, 50].map(n => (
+                    <button key={n} onClick={() => setJumlahSoal(n)}
+                      className="flex-1 rounded-lg py-1.5 text-xs font-bold transition-all"
+                      style={jumlahSoal === n ? {
+                        background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: 'white', border: 'none',
+                      } : { border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Timer ── */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[11px] font-bold uppercase tracking-widest t-muted">Timer Countdown</p>
+                  <TogglePill on={timerOn} onClick={() => setTimerOn(v => !v)} />
+                </div>
+                {timerOn && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {[15, 30, 45, 60, 90, 120].map(m => (
+                      <button key={m} onClick={() => setTimerMenit(m)}
+                        className="rounded-xl py-2.5 text-sm font-bold transition-all duration-200"
+                        style={timerMenit === m ? {
+                          background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                          color: 'white', border: 'none', boxShadow: '0 4px 12px rgba(14,165,233,0.25)',
+                        } : { border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-muted)' }}>
+                        {m} mnt
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── CTA ── */}
+              <Button variant="gradient" size="lg" className="w-full" onClick={handleStart}>
+                <BookOpen className="h-5 w-5" />
+                Mulai {activeMode.label} · {jumlahSoal} Soal
+                {timerOn && <span className="opacity-80 ml-1">· {timerMenit} mnt</span>}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ── Soal screen ────────────────────────────────────────────
 function SoalScreen({
@@ -404,7 +596,7 @@ function SoalScreen({
               onClick={() => handlePilih(p.id)}
               disabled={answered_ || submitting}
               className={cn(
-                'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 disabled:cursor-default',
+                'flex w-full items-start gap-3 rounded-xl border p-5 text-left transition-all duration-200 disabled:cursor-default',
                 btnClass,
               )}
             >
@@ -555,9 +747,25 @@ function LatihanContent() {
   const [tipe, setTipe]       = useState('harian');
   const [emptyBank, setEmptyBank] = useState(false);
 
+  type StartConfig = {
+    tipe: string;
+    mode: string;
+    mapelIds?: number[];
+    subMateriIds?: number[];
+    jumlahSoal: number;
+    timerMenit?: number;
+  };
+
   const mulaiMutation = useMutation({
-    mutationFn: ({ tipe, mapel_ids }: { tipe: string; mapel_ids?: number[] }) =>
-      latihanApi.mulai(tipe, mapel_ids),
+    mutationFn: (cfg: StartConfig) =>
+      latihanApi.mulai({
+        tipe:            cfg.tipe,
+        mode:            cfg.mode,
+        mapel_ids:       cfg.mapelIds,
+        sub_materi_ids:  cfg.subMateriIds,
+        jumlah_soal:     cfg.jumlahSoal,
+        timer_menit:     cfg.timerMenit,
+      }),
     onSuccess: (res) => {
       const d = res.data.data;
       setSesiId(d.id);
@@ -579,11 +787,11 @@ function LatihanContent() {
     mutationFn: (id: number) => latihanApi.selesai(id),
   });
 
-  async function handleStart(t: string, mapelIds?: number[]) {
-    setTipe(t);
+  async function handleStart(cfg: StartConfig) {
+    setTipe(cfg.tipe);
     setPhase('loading');
     setEmptyBank(false);
-    mulaiMutation.mutate({ tipe: t, mapel_ids: mapelIds });
+    mulaiMutation.mutate(cfg);
   }
 
   async function handleFinish(id: number) {
