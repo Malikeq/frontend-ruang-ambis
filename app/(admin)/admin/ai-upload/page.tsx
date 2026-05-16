@@ -1,409 +1,613 @@
 'use client';
 
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Skeleton } from '@/components/ui/Spinner';
-import { PageHeader } from '@/components/shared/PageHeader';
-import { cn, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import { cn, formatDate } from '@/lib/utils';
 import {
-  Upload, FileText, CheckCircle2, XCircle,
-  Clock, RefreshCw, Sparkles, AlertCircle,
-  BookOpen, Loader2, ChevronRight, RotateCcw,
+  Upload, FileText, CheckCircle2, XCircle, Sparkles,
+  Loader2, ChevronRight, RotateCcw, Clock,
+  RefreshCw, ArrowLeft, ArrowRight, Check,
 } from 'lucide-react';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
 
 const ACCEPTED = '.pdf,.docx,.txt,.md,.jpg,.jpeg,.png';
 
-// ── Mapel pill colours (fallback if not from API) ──────────────────────────
-const MAPEL_COLORS: Record<string, string> = {
-  PU:   'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  PM:   'bg-blue-500/20 text-blue-300 border-blue-500/30',
-  LBI:  'bg-green-500/20 text-green-300 border-green-500/30',
-  LBE:  'bg-sky-500/20 text-sky-300 border-sky-500/30',
-  KMBM: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
-  PK:   'bg-orange-500/20 text-orange-300 border-orange-500/30',
-  PPU:  'bg-rose-500/20 text-rose-300 border-rose-500/30',
-};
+// ── Step indicator ────────────────────────────────────────
+const STEPS = ['Upload', 'Mapel', 'Sub-Materi', 'Konfigurasi', 'Generate'];
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { variant: any; label: string }> = {
-    processing: { variant: 'warning', label: '⏳ Memproses AI...' },
-    done:       { variant: 'success', label: '✅ Selesai' },
-    failed:     { variant: 'error',   label: '❌ Gagal' },
-  };
-  const s = map[status] ?? { variant: 'default', label: status };
-  return <Badge variant={s.variant}>{s.label}</Badge>;
+function StepBar({ current }: { current: number }) {
+  return (
+    <div className="flex items-center gap-0 mb-8">
+      {STEPS.map((label, i) => {
+        const done    = i < current;
+        const active  = i === current;
+        return (
+          <div key={i} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center gap-1">
+              <div className={cn(
+                'h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all',
+                done   ? 'bg-sky-500 text-white'
+                : active ? 'bg-white border-2 border-sky-500 text-sky-600'
+                : 'bg-slate-100 text-slate-400',
+              )}>
+                {done ? <Check className="h-4 w-4" /> : i + 1}
+              </div>
+              <span className={cn('text-[10px] font-medium whitespace-nowrap hidden sm:block',
+                active ? 'text-sky-600' : done ? 'text-sky-500' : 'text-slate-400',
+              )}>{label}</span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className="h-0.5 flex-1 mx-2 mt-[-14px]"
+                style={{ backgroundColor: i < current ? '#0ea5e9' : '#e2e8f0' }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
-// ── Upload row with live status polling ────────────────────────────────────
-function UploadRow({ upload: u, onDone }: { upload: any; onDone: () => void }) {
-  const [liveStatus, setLiveStatus] = useState(u.status);
-  const [draftCount, setDraftCount] = useState<number | null>(u.drafts_count ?? null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+// ── Step 1: Upload File ───────────────────────────────────
+function Step1({ file, setFile, onNext }: {
+  file: File | null; setFile: (f: File | null) => void; onNext: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [drag, setDrag] = useState(false);
 
-  useEffect(() => { setLiveStatus(u.status); }, [u.status]);
-
-  // Poll while processing
-  useEffect(() => {
-    if (liveStatus !== 'processing') return;
-    pollRef.current = setInterval(async () => {
-      try {
-        const res  = await adminApi.uploadStatus(u.id);
-        const data = res.data?.data;
-        if (data?.upload?.status && data.upload.status !== 'processing') {
-          setLiveStatus(data.upload.status);
-          setDraftCount(data.draft_count ?? 0);
-          clearInterval(pollRef.current!);
-          onDone();
-        }
-      } catch { /* ignore */ }
-    }, 4000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveStatus, u.id]);
-
-  const retryMut = useMutation({
-    mutationFn: () => adminApi.retryUpload(u.id),
-    onSuccess: () => {
-      toast.success('Upload dijadwalkan ulang!');
-      setLiveStatus('processing');
-      setDraftCount(null);
-    },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Gagal retry.'),
-  });
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); setDrag(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) setFile(f);
+  }, [setFile]);
 
   return (
-    <div className="flex items-center gap-4 px-5 py-4">
-      <div className={cn(
-        'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-        liveStatus === 'done'        ? 'bg-emerald-500/15'
-          : liveStatus === 'failed'  ? 'bg-red-500/15'
-          : 'bg-indigo-500/15',
-      )}>
-        {liveStatus === 'processing' ? (
-          <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
-        ) : liveStatus === 'done' ? (
-          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-slate-800">Upload Materi</h2>
+        <p className="text-sm text-slate-500 mt-0.5">PDF, DOCX, TXT, gambar — AI akan ekstrak & generate soal</p>
+      </div>
+
+      <div
+        onDragOver={e => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={onDrop}
+        onClick={() => !file && fileRef.current?.click()}
+        className={cn(
+          'flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 transition-all cursor-pointer',
+          drag    ? 'border-sky-400 bg-sky-50 scale-[1.01]'
+          : file  ? 'border-emerald-400 bg-emerald-50'
+          : 'border-slate-200 bg-slate-50 hover:border-sky-300 hover:bg-sky-50',
+        )}
+      >
+        <input ref={fileRef} type="file" hidden accept={ACCEPTED}
+          onChange={e => setFile(e.target.files?.[0] ?? null)} />
+        {file ? (
+          <>
+            <div className="h-14 w-14 rounded-2xl bg-emerald-100 flex items-center justify-center">
+              <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-slate-800">{file.name}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
+            </div>
+            <button onClick={e => { e.stopPropagation(); setFile(null); if (fileRef.current) fileRef.current.value = ''; }}
+              className="text-xs text-red-400 hover:underline">Ganti file</button>
+          </>
         ) : (
-          <XCircle className="h-5 w-5 text-red-400" />
+          <>
+            <div className="h-14 w-14 rounded-2xl bg-sky-100 flex items-center justify-center">
+              <Upload className="h-7 w-7 text-sky-500" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-slate-600">
+                {drag ? 'Lepaskan di sini...' : 'Klik atau drag file ke sini'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">PDF · DOCX · TXT · JPG · PNG · Maks 20 MB</p>
+            </div>
+          </>
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-semibold text-[#f1f5f9]">{u.filename}</p>
-        <p className="text-xs text-[#64748b] mt-0.5">
-          {u.jumlah_soal_target} soal target · {formatDate(u.created_at)}
-          {draftCount !== null && liveStatus === 'done' && (
-            <span className="ml-2 text-emerald-400 font-medium">· {draftCount} draft dibuat</span>
-          )}
+      <button
+        onClick={onNext} disabled={!file}
+        className={cn(
+          'w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-all',
+          file ? 'bg-sky-500 hover:bg-sky-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed',
+        )}>
+        Lanjut — Pilih Mapel <ArrowRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+// ── Step 2: Pilih Mapel ───────────────────────────────────
+function Step2({ mapelIds, setMapelIds, onNext, onBack }: {
+  mapelIds: number[]; setMapelIds: (ids: number[]) => void;
+  onNext: () => void; onBack: () => void;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-mapel-list'],
+    queryFn: () => adminApi.mapelList(),
+    staleTime: Infinity,
+  });
+  const mapels: Array<{ id: number; nama: string; kode: string }> = data?.data?.data ?? [];
+
+  const toggle = (id: number) =>
+    setMapelIds(mapelIds.includes(id) ? mapelIds.filter(x => x !== id) : [...mapelIds, id]);
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-slate-800">Pilih Mata Pelajaran</h2>
+        <p className="text-sm text-slate-500 mt-0.5">AI akan generate soal sesuai mapel yang dipilih</p>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">{[1,2,3,4,5,6,7].map(i => <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />)}</div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs mb-1">
+            <span className="font-semibold text-slate-500">{mapelIds.length} dipilih</span>
+            <div className="flex gap-3">
+              <button onClick={() => setMapelIds(mapels.map(m => m.id))} className="text-sky-500 font-semibold hover:underline">Semua</button>
+              <button onClick={() => setMapelIds([])} className="text-slate-400 hover:underline">Reset</button>
+            </div>
+          </div>
+          {mapels.map(m => {
+            const active = mapelIds.includes(m.id);
+            return (
+              <button key={m.id} onClick={() => toggle(m.id)}
+                className={cn(
+                  'w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-150',
+                  active ? 'bg-sky-50 border-2 border-sky-400' : 'bg-white border border-slate-200 hover:border-sky-300',
+                )}>
+                <span className={cn(
+                  'shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold min-w-[3rem] text-center',
+                  active ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-600',
+                )}>{m.kode}</span>
+                <span className="flex-1 text-sm font-medium text-slate-700">{m.nama}</span>
+                {active && <Check className="h-4 w-4 text-sky-500 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        <button onClick={onBack} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <ArrowLeft className="h-4 w-4" /> Kembali
+        </button>
+        <button onClick={onNext} disabled={mapelIds.length === 0}
+          className={cn('flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-all',
+            mapelIds.length > 0 ? 'bg-sky-500 hover:bg-sky-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed')}>
+          Lanjut — Konfigurasi <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 2b: Sub-Materi per Mapel ─────────────────────
+function Step2b({ mapelIds, subMap, setSubMap, onNext, onBack }: {
+  mapelIds: number[];
+  subMap: Record<number, string[]>;
+  setSubMap: (m: Record<number, string[]>) => void;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const { data } = useQuery({ queryKey: ['admin-mapel-list'], queryFn: () => adminApi.mapelList(), staleTime: Infinity });
+  const allMapels: Array<{ id: number; nama: string; kode: string }> = data?.data?.data ?? [];
+  const chosen = allMapels.filter(m => mapelIds.includes(m.id));
+  const [inputs, setInputs] = useState<Record<number, string>>({});
+
+  function addSub(mapelId: number) {
+    const val = (inputs[mapelId] ?? '').trim();
+    if (!val) return;
+    const existing = subMap[mapelId] ?? [];
+    if (!existing.includes(val)) {
+      setSubMap({ ...subMap, [mapelId]: [...existing, val] });
+    }
+    setInputs(p => ({ ...p, [mapelId]: '' }));
+  }
+
+  function removeSub(mapelId: number, name: string) {
+    setSubMap({ ...subMap, [mapelId]: (subMap[mapelId] ?? []).filter(s => s !== name) });
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-bold text-slate-800">Target Sub-Materi</h2>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Tentukan topik/bab per mapel agar soal dikelompokkan dengan benar.
+          <span className="text-sky-500 font-medium"> Bisa dikosongkan</span> — AI akan buat nama otomatis.
         </p>
       </div>
 
+      <div className="space-y-4">
+        {chosen.map(m => {
+          const subs = subMap[m.id] ?? [];
+          return (
+            <div key={m.id} className="rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="rounded-lg px-2.5 py-1 text-xs font-bold bg-sky-100 text-sky-700">{m.kode}</span>
+                <span className="text-sm font-semibold text-slate-700">{m.nama}</span>
+              </div>
+
+              {/* Tag chips */}
+              {subs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {subs.map(s => (
+                    <span key={s} className="inline-flex items-center gap-1 rounded-full bg-sky-50 border border-sky-200 px-2.5 py-1 text-xs font-medium text-sky-700">
+                      {s}
+                      <button onClick={() => removeSub(m.id, s)} className="ml-0.5 text-sky-400 hover:text-red-400">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Input */}
+              <div className="flex gap-2">
+                <input
+                  value={inputs[m.id] ?? ''}
+                  onChange={e => setInputs(p => ({ ...p, [m.id]: e.target.value }))}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSub(m.id); }}}
+                  placeholder="Nama sub-materi, tekan Enter"
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-sky-400 focus:outline-none"
+                />
+                <button onClick={() => addSub(m.id)}
+                  className="rounded-lg bg-sky-500 px-3 py-2 text-xs font-bold text-white hover:bg-sky-600 transition-all">
+                  + Tambah
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex gap-2">
+        <span className="text-amber-500 text-sm shrink-0">⚠️</span>
+        <p className="text-xs text-amber-700">
+          Sub-materi yang kamu tambahkan akan langsung tersedia di halaman <strong>Latihan Per Bab</strong> setelah soal di-approve.
+        </p>
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={onBack} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <ArrowLeft className="h-4 w-4" /> Kembali
+        </button>
+        <button onClick={onNext} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-600 py-3 text-sm font-bold text-white transition-all">
+          Lanjut — Konfigurasi <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 3: Konfigurasi ────────────────────────────────────
+function Step3({ jumlah, setJumlah, tingkat, setTingkat, onNext, onBack }: {
+  jumlah: number; setJumlah: (n: number) => void;
+  tingkat: string; setTingkat: (t: string) => void;
+  onNext: () => void; onBack: () => void;
+}) {
+  const presets = [5, 10, 20, 30, 50];
+  const levels  = [
+    { id: 'mudah',  label: 'Mudah',  desc: 'Soal dasar, cocok untuk pemula', color: 'emerald' },
+    { id: 'sedang', label: 'Sedang', desc: 'Standar SNBT, recommended',       color: 'sky' },
+    { id: 'sulit',  label: 'Sulit',  desc: 'Tingkat tinggi, untuk latihan intensif', color: 'amber' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-slate-800">Konfigurasi Generate</h2>
+        <p className="text-sm text-slate-500 mt-0.5">Atur jumlah dan tingkat kesulitan soal</p>
+      </div>
+
+      {/* Jumlah soal */}
+      <div>
+        <p className="text-sm font-semibold text-slate-700 mb-3">Jumlah Soal Target</p>
+        <div className="flex items-center gap-4 mb-4">
+          <button onClick={() => setJumlah(Math.max(5, jumlah - 5))}
+            className="h-10 w-10 rounded-xl border border-slate-200 text-xl font-bold text-slate-600 hover:border-sky-400 transition-all flex items-center justify-center">−</button>
+          <div className="flex-1 text-center">
+            <p className="text-4xl font-black text-sky-600">{jumlah}</p>
+            <p className="text-xs text-slate-400">soal</p>
+          </div>
+          <button onClick={() => setJumlah(Math.min(50, jumlah + 5))}
+            className="h-10 w-10 rounded-xl border border-slate-200 text-xl font-bold text-slate-600 hover:border-sky-400 transition-all flex items-center justify-center">+</button>
+        </div>
+        <div className="flex gap-2">
+          {presets.map(n => (
+            <button key={n} onClick={() => setJumlah(n)}
+              className={cn('flex-1 rounded-lg py-1.5 text-xs font-bold transition-all',
+                jumlah === n ? 'bg-sky-500 text-white' : 'border border-slate-200 text-slate-500 hover:border-sky-300')}>
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tingkat kesulitan */}
+      <div>
+        <p className="text-sm font-semibold text-slate-700 mb-3">Tingkat Kesulitan</p>
+        <div className="space-y-2">
+          {levels.map(l => {
+            const active = tingkat === l.id;
+            const colors: Record<string, string> = {
+              emerald: active ? 'border-2 border-emerald-400 bg-emerald-50' : 'border border-slate-200 hover:border-emerald-300',
+              sky:     active ? 'border-2 border-sky-400 bg-sky-50'         : 'border border-slate-200 hover:border-sky-300',
+              amber:   active ? 'border-2 border-amber-400 bg-amber-50'     : 'border border-slate-200 hover:border-amber-300',
+            };
+            const dotColors: Record<string, string> = { emerald: 'bg-emerald-400', sky: 'bg-sky-400', amber: 'bg-amber-400' };
+            return (
+              <button key={l.id} onClick={() => setTingkat(l.id)}
+                className={cn('w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all', colors[l.color])}>
+                <div className={cn('h-3 w-3 rounded-full shrink-0', dotColors[l.color])} />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-700">{l.label}</p>
+                  <p className="text-xs text-slate-400">{l.desc}</p>
+                </div>
+                {active && <Check className="h-4 w-4 text-slate-500 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={onBack} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+          <ArrowLeft className="h-4 w-4" /> Kembali
+        </button>
+        <button onClick={onNext}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-600 py-3 text-sm font-bold text-white transition-all">
+          Lanjut — Review <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 4: Review & Generate ──────────────────────────────
+function Step4({ file, mapelIds, subMap, jumlah, tingkat, onBack, onSuccess }: {
+  file: File; mapelIds: number[]; subMap: Record<number, string[]>;
+  jumlah: number; tingkat: string;
+  onBack: () => void; onSuccess: () => void;
+}) {
+  const { data } = useQuery({ queryKey: ['admin-mapel-list'], queryFn: () => adminApi.mapelList(), staleTime: Infinity });
+  const allMapels: Array<{ id: number; nama: string; kode: string }> = data?.data?.data ?? [];
+  const chosen = allMapels.filter(m => mapelIds.includes(m.id));
+  const totalSubMateri = Object.values(subMap).flat().length;
+
+  const mut = useMutation({
+    mutationFn: () => {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('target_mapel_ids', JSON.stringify(mapelIds));
+      fd.append('jumlah_soal_target', String(jumlah));
+      fd.append('tingkat_kesulitan', tingkat);
+      // Only send if admin specified at least one sub-materi
+      if (Object.keys(subMap).length > 0) {
+        fd.append('target_sub_materi', JSON.stringify(subMap));
+      }
+      return adminApi.aiUpload(fd);
+    },
+    onSuccess: (res) => {
+      toast.success(`"${res.data?.data?.filename ?? file.name}" berhasil! AI sedang generate soal...`);
+      onSuccess();
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Upload gagal.'),
+  });
+
+  const rows = [
+    { label: 'File',          value: file.name,                                      sub: `${(file.size/1024).toFixed(1)} KB` },
+    { label: 'Mapel',         value: chosen.map(m => m.kode).join(', ') || '—',       sub: `${chosen.length} mata pelajaran` },
+    { label: 'Sub-Materi',    value: totalSubMateri > 0 ? `${totalSubMateri} topik`  : 'Auto (AI)', sub: totalSubMateri > 0 ? 'Ditentukan admin' : 'AI generate otomatis' },
+    { label: 'Jumlah Soal',   value: `${jumlah} soal`,                               sub: 'target generate' },
+    { label: 'Kesulitan',     value: tingkat.charAt(0).toUpperCase()+tingkat.slice(1), sub: 'tingkat soal' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-slate-800">Review & Generate</h2>
+        <p className="text-sm text-slate-500 mt-0.5">Pastikan semua konfigurasi sudah benar</p>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 overflow-hidden">
+        {rows.map((r, i) => (
+          <div key={i} className={cn('flex items-center justify-between px-5 py-3.5', i > 0 && 'border-t border-slate-100')}>
+            <span className="text-sm text-slate-500">{r.label}</span>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-slate-800">{r.value}</p>
+              <p className="text-xs text-slate-400">{r.sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Sub-materi detail */}
+      {totalSubMateri > 0 && (
+        <div className="rounded-xl border border-sky-100 bg-sky-50 p-4">
+          <p className="text-xs font-bold text-sky-700 mb-2">Sub-Materi yang akan dibuat:</p>
+          <div className="space-y-1.5">
+            {chosen.map(m => {
+              const subs = subMap[m.id] ?? [];
+              if (subs.length === 0) return null;
+              return (
+                <div key={m.id} className="flex items-start gap-2">
+                  <span className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-sky-200 text-sky-800 shrink-0 mt-0.5">{m.kode}</span>
+                  <p className="text-xs text-sky-700">{subs.join(' · ')}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl bg-sky-50 border border-sky-200 px-4 py-3 flex gap-3">
+        <Sparkles className="h-4 w-4 text-sky-500 shrink-0 mt-0.5" />
+        <p className="text-xs text-sky-700">AI akan membaca dokumen lalu membuat soal SNBT sesuai sub-materi yang ditentukan. Proses berlangsung di background — soal muncul di bank setelah admin approve di halaman Review Soal AI.</p>
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={onBack} disabled={mut.isPending}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+          <ArrowLeft className="h-4 w-4" /> Kembali
+        </button>
+        <button onClick={() => mut.mutate()} disabled={mut.isPending}
+          className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-600 py-3 text-sm font-bold text-white transition-all disabled:opacity-70">
+          {mut.isPending
+            ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</>
+            : <><Sparkles className="h-4 w-4" /> Generate Soal AI</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── History row ────────────────────────────────────────────
+function HistRow({ u, onDone }: { u: any; onDone: () => void }) {
+  const [status, setStatus] = useState(u.status);
+  const [drafts, setDrafts] = useState<number | null>(u.drafts_count ?? null);
+
+  const retryMut = useMutation({
+    mutationFn: () => adminApi.retryUpload(u.id),
+    onSuccess: () => { toast.success('Dijadwalkan ulang!'); setStatus('processing'); },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Gagal.'),
+  });
+
+  const icon = status === 'done' ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+    : status === 'failed' ? <XCircle className="h-5 w-5 text-red-400" />
+    : <Loader2 className="h-5 w-5 text-sky-500 animate-spin" />;
+
+  const bg = status === 'done' ? 'bg-emerald-50' : status === 'failed' ? 'bg-red-50' : 'bg-sky-50';
+
+  return (
+    <div className="flex items-center gap-4 px-5 py-4 border-b border-slate-100 last:border-0">
+      <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center shrink-0', bg)}>{icon}</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-slate-800 truncate">{u.filename}</p>
+        <p className="text-xs text-slate-400 mt-0.5">
+          {u.jumlah_soal_target} soal · {formatDate(u.created_at)}
+          {drafts !== null && status === 'done' && <span className="ml-2 text-emerald-600 font-medium">· {drafts} draft</span>}
+        </p>
+      </div>
       <div className="flex items-center gap-2 shrink-0">
-        <StatusBadge status={liveStatus} />
-        {liveStatus === 'done' && (
+        {status === 'done' && (
           <Link href={ROUTES.admin.aiDrafts}>
-            <Button variant="ghost" size="sm" className="h-7 text-xs">
-              Review <ChevronRight className="h-3 w-3 ml-0.5" />
-            </Button>
+            <button className="text-xs font-semibold text-sky-500 hover:underline flex items-center gap-1">
+              Review <ChevronRight className="h-3 w-3" />
+            </button>
           </Link>
         )}
-        {(liveStatus === 'failed') && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => retryMut.mutate()}
-            isLoading={retryMut.isPending}
-          >
+        {status === 'failed' && (
+          <button onClick={() => retryMut.mutate()} disabled={retryMut.isPending}
+            className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:underline disabled:opacity-50">
             <RotateCcw className="h-3 w-3" /> Retry
-          </Button>
+          </button>
         )}
       </div>
     </div>
   );
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
+// ── Main Page ──────────────────────────────────────────────
 export default function AdminAiUploadPage() {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const qc      = useQueryClient();
-
+  const qc = useQueryClient();
+  const [step, setStep]         = useState(0);
   const [file, setFile]         = useState<File | null>(null);
-  const [jumlah, setJumlah]     = useState(10);
   const [mapelIds, setMapelIds] = useState<number[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [subMap, setSubMap]     = useState<Record<number, string[]>>({});
+  const [jumlah, setJumlah]     = useState(20);
+  const [tingkat, setTingkat]   = useState('sedang');
 
-  // ── Fetch real mapel list from DB ──────────────────────────────────────
-  const { data: mapelData, isLoading: loadingMapel } = useQuery({
-    queryKey: ['admin-mapel-list'],
-    queryFn:  () => adminApi.mapelList(),
-    staleTime: Infinity,
-  });
-  const mapels: Array<{ id: number; nama: string; kode: string }> =
-    mapelData?.data?.data ?? [];
-
-  // ── Upload history ─────────────────────────────────────────────────────
-  const { data: histData, isLoading: loadingHist, refetch } = useQuery({
+  const { data: histData, isLoading: histLoading, refetch } = useQuery({
     queryKey: ['upload-history'],
-    queryFn:  () => adminApi.uploadHistory(),
+    queryFn: () => adminApi.uploadHistory(),
     staleTime: 30_000,
   });
   const history: any[] = histData?.data?.data?.data ?? [];
 
-  // ── Upload mutation ────────────────────────────────────────────────────
-  const uploadMutation = useMutation({
-    mutationFn: () => {
-      if (!file) throw new Error('Pilih file dulu!');
-      if (mapelIds.length === 0) throw new Error('Pilih minimal 1 mapel target!');
-
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('target_mapel_ids', JSON.stringify(mapelIds));
-      fd.append('jumlah_soal_target', String(jumlah));
-      return adminApi.aiUpload(fd);
-    },
-    onSuccess: (res) => {
-      const uploadName = res.data?.data?.filename ?? file?.name ?? 'File';
-      toast.success(`"${uploadName}" berhasil diupload! AI sedang membuat soal...`);
-      setFile(null);
-      setMapelIds([]);
-      qc.invalidateQueries({ queryKey: ['upload-history'] });
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? err?.message ?? 'Upload gagal.';
-      toast.error(msg);
-    },
-  });
-
-  // ── Toggle mapel selection ─────────────────────────────────────────────
-  const toggleMapel = (id: number) =>
-    setMapelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-
-  const selectAll = () => setMapelIds(mapels.map(m => m.id));
-  const clearAll  = () => setMapelIds([]);
-
-  // ── Drag-and-drop handlers ─────────────────────────────────────────────
-  const onDragOver  = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
-  const onDragLeave = useCallback(() => setIsDragging(false), []);
-  const onDrop      = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const dropped = e.dataTransfer.files?.[0];
-    if (dropped) setFile(dropped);
-  }, []);
-
-  const canSubmit = !!file && mapelIds.length > 0 && !uploadMutation.isPending;
+  function reset() {
+    setStep(0); setFile(null); setMapelIds([]); setSubMap({});
+    setJumlah(20); setTingkat('sedang');
+    qc.invalidateQueries({ queryKey: ['upload-history'] });
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <PageHeader
-        title="📤 Upload Materi AI"
-        description="Upload PDF, DOCX, gambar, atau teks — AI akan generate soal SNBT secara otomatis"
-      />
+    <div className="space-y-6 animate-fade-in max-w-2xl mx-auto">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+          <Sparkles className="h-6 w-6 text-sky-500" /> Generate Soal AI
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">Upload materi → pilih mapel → generate soal SNBT otomatis</p>
+      </div>
 
-      {/* ── Upload form ─────────────────────────────────────────────────── */}
-      <Card>
-        <h2 className="mb-5 font-semibold text-[#f1f5f9] flex items-center gap-2 text-base">
-          <Sparkles className="h-4 w-4 text-[#6366f1]" />
-          Generate Soal dari Materi
-        </h2>
-
-        {/* Drop zone */}
-        <div
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
-          onClick={() => !file && fileRef.current?.click()}
-          className={cn(
-            'mb-5 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-all cursor-pointer',
-            isDragging
-              ? 'border-[rgba(99,102,241,0.7)] bg-[rgba(99,102,241,0.1)] scale-[1.01]'
-              : file
-              ? 'border-[rgba(16,185,129,0.4)] bg-[rgba(16,185,129,0.04)]'
-              : 'border-[rgba(99,102,241,0.3)] bg-[rgba(99,102,241,0.04)] hover:border-[rgba(99,102,241,0.55)] hover:bg-[rgba(99,102,241,0.07)]',
-          )}
-        >
-          <input
-            ref={fileRef}
-            type="file"
-            hidden
-            accept={ACCEPTED}
-            onChange={e => setFile(e.target.files?.[0] ?? null)}
-          />
-          {file ? (
-            <>
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(16,185,129,0.15)]">
-                <CheckCircle2 className="h-8 w-8 text-[#10b981]" />
+      {/* Pipeline flow banner */}
+      <div className="rounded-2xl border border-sky-100 bg-sky-50 px-5 py-4">
+        <p className="text-xs font-bold text-sky-700 mb-3 uppercase tracking-wide">Alur Generate Soal</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { n: '1', label: 'Upload Materi' },
+            { n: '2', label: 'AI Generate Draft' },
+            { n: '3', label: 'Admin Approve ⬅ wajib' },
+            { n: '4', label: 'Soal Live di Platform' },
+          ].map((s, i, arr) => (
+            <div key={s.n} className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${i === 2 ? 'bg-amber-400 text-white' : 'bg-sky-200 text-sky-800'}`}>{s.n}</span>
+                <span className={`text-xs font-medium ${i === 2 ? 'text-amber-700 font-bold' : 'text-sky-700'}`}>{s.label}</span>
               </div>
-              <div className="text-center">
-                <p className="font-semibold text-[#f1f5f9]">{file.name}</p>
-                <p className="text-xs text-[#64748b] mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
-              </div>
-              <button
-                onClick={e => { e.stopPropagation(); setFile(null); if (fileRef.current) fileRef.current.value = ''; }}
-                className="text-xs text-red-400 hover:underline"
-              >
-                Ganti file
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(99,102,241,0.12)]">
-                <Upload className="h-7 w-7 text-[#6366f1]" />
-              </div>
-              <div className="text-center">
-                <p className="font-medium text-[#94a3b8]">
-                  {isDragging ? 'Lepaskan file di sini...' : 'Klik atau drag file ke sini'}
-                </p>
-                <p className="text-xs text-[#475569] mt-1">PDF, DOCX, TXT, MD, JPG, PNG · Maks 20MB</p>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Mapel selector */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-sm font-medium text-[#94a3b8]">
-              Target Mapel SNBT
-              <span className={cn(
-                'ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                mapelIds.length > 0 ? 'bg-indigo-500/20 text-indigo-300' : 'bg-red-500/15 text-red-400',
-              )}>
-                {mapelIds.length > 0 ? `${mapelIds.length} dipilih` : 'Wajib pilih min. 1'}
-              </span>
-            </p>
-            {mapels.length > 0 && (
-              <div className="flex gap-2">
-                <button onClick={selectAll} className="text-xs text-indigo-400 hover:underline">Pilih Semua</button>
-                <span className="text-[#334155]">·</span>
-                <button onClick={clearAll} className="text-xs text-[#64748b] hover:underline">Reset</button>
-              </div>
-            )}
-          </div>
-
-          {loadingMapel ? (
-            <div className="flex gap-2 flex-wrap">
-              {[1,2,3,4,5,6,7].map(i => <Skeleton key={i} className="h-8 w-20 rounded-lg" />)}
+              {i < arr.length - 1 && <span className="text-sky-300 text-xs">→</span>}
             </div>
-          ) : mapels.length === 0 ? (
-            <div className="flex items-center gap-2 rounded-lg border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.07)] px-3 py-2.5">
-              <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-              <p className="text-xs text-red-400">Mapel belum ada di database. Pastikan seeder sudah dijalankan.</p>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {mapels.map((m) => {
-                const active     = mapelIds.includes(m.id);
-                const colorClass = MAPEL_COLORS[m.kode] ?? 'bg-slate-500/20 text-slate-300 border-slate-500/30';
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => toggleMapel(m.id)}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150',
-                      active
-                        ? 'border-[rgba(99,102,241,0.6)] bg-[rgba(99,102,241,0.18)] text-[#a5b4fc] shadow-sm'
-                        : 'border-[rgba(255,255,255,0.08)] text-[#64748b] hover:border-[rgba(99,102,241,0.3)] hover:text-[#94a3b8]',
-                    )}
-                  >
-                    <span className={cn('rounded px-1 py-0.5 text-[10px] font-bold border', colorClass)}>
-                      {m.kode}
-                    </span>
-                    {m.nama.split(' ').slice(0, 2).join(' ')}
-                    {active && <CheckCircle2 className="h-3 w-3 text-indigo-400" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          ))}
         </div>
-
-        {/* Jumlah soal */}
-        <div className="mb-6 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
-          <div className="flex justify-between text-sm mb-3">
-            <span className="font-medium text-[#94a3b8] flex items-center gap-1.5">
-              <BookOpen className="h-4 w-4 text-indigo-400" />
-              Jumlah Soal Target
-            </span>
-            <span className="font-bold text-[#a5b4fc] tabular-nums">{jumlah} soal</span>
-          </div>
-          <input
-            type="range" min={5} max={50} step={5} value={jumlah}
-            onChange={e => setJumlah(Number(e.target.value))}
-            className="w-full accent-[#6366f1]"
-          />
-          <div className="flex justify-between text-[10px] text-[#475569] mt-1.5">
-            <span>5</span>
-            <span>50</span>
-          </div>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="text-xs text-sky-600">Setelah generate selesai, soal perlu di-review di:</span>
+          <Link href={ROUTES.admin.aiDrafts}
+            className="inline-flex items-center gap-1 rounded-lg bg-sky-500 px-3 py-1 text-xs font-bold text-white hover:bg-sky-600 transition-all">
+            Review &amp; Approve Soal <ChevronRight className="h-3 w-3" />
+          </Link>
         </div>
+      </div>
 
-        {/* Submit */}
-        <Button
-          variant="gradient"
-          size="lg"
-          className="w-full"
-          onClick={() => uploadMutation.mutate()}
-          isLoading={uploadMutation.isPending}
-          disabled={!canSubmit}
-        >
-          {uploadMutation.isPending ? (
-            <>Mengupload & Memulai AI...</>
-          ) : (
-            <><Sparkles className="h-4 w-4" /> Generate {jumlah} Soal dengan AI</>
-          )}
-        </Button>
+      {/* Wizard card */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6" style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
+        <StepBar current={step} />
+        {step === 0 && <Step1 file={file} setFile={setFile} onNext={() => setStep(1)} />}
+        {step === 1 && <Step2 mapelIds={mapelIds} setMapelIds={setMapelIds} onNext={() => setStep(2)} onBack={() => setStep(0)} />}
+        {step === 2 && <Step2b mapelIds={mapelIds} subMap={subMap} setSubMap={setSubMap} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+        {step === 3 && <Step3 jumlah={jumlah} setJumlah={setJumlah} tingkat={tingkat} setTingkat={setTingkat} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
+        {step === 4 && file && <Step4 file={file} mapelIds={mapelIds} subMap={subMap} jumlah={jumlah} tingkat={tingkat} onBack={() => setStep(3)} onSuccess={reset} />}
+      </div>
 
-        {/* Validation hints */}
-        {!file && !uploadMutation.isPending && (
-          <p className="mt-2 text-center text-xs text-[#475569]">⬆ Pilih file materi terlebih dahulu</p>
-        )}
-        {file && mapelIds.length === 0 && !uploadMutation.isPending && (
-          <p className="mt-2 text-center text-xs text-amber-400">⚠ Pilih minimal 1 mapel target</p>
-        )}
-      </Card>
-
-      {/* ── Upload history ──────────────────────────────────────────────── */}
-      <Card className="p-0 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] px-5 py-4">
-          <h2 className="font-semibold text-[#f1f5f9] flex items-center gap-2">
-            <Clock className="h-4 w-4 text-[#6366f1]" />
-            Riwayat Upload
+      {/* History */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden" style={{ boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-slate-400" /> Riwayat Upload
           </h2>
-          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={loadingHist}>
-            <RefreshCw className={cn('h-3.5 w-3.5', loadingHist && 'animate-spin')} />
-            Refresh
-          </Button>
+          <button onClick={() => refetch()} disabled={histLoading}
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-sky-500 transition-colors">
+            <RefreshCw className={cn('h-3.5 w-3.5', histLoading && 'animate-spin')} /> Refresh
+          </button>
         </div>
-
-        {loadingHist ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-16" />)}
-          </div>
+        {histLoading ? (
+          <div className="p-4 space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-slate-100 animate-pulse" />)}</div>
         ) : history.length === 0 ? (
-          <div className="flex flex-col items-center py-14 text-center">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(99,102,241,0.08)]">
-              <FileText className="h-7 w-7 text-[#334155]" />
-            </div>
-            <p className="font-semibold text-[#f1f5f9]">Belum ada upload</p>
-            <p className="text-sm text-[#64748b] mt-1">Upload materi pertamamu di atas!</p>
+          <div className="py-12 text-center">
+            <FileText className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm text-slate-400">Belum ada upload. Mulai generate soal di atas!</p>
           </div>
         ) : (
-          <div className="divide-y divide-[rgba(255,255,255,0.04)]">
-            {history.map((u: any) => (
-              <UploadRow key={u.id} upload={u} onDone={() => refetch()} />
-            ))}
-          </div>
+          <div>{history.map((u: any) => <HistRow key={u.id} u={u} onDone={() => refetch()} />)}</div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

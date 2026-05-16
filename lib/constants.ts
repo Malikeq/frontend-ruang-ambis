@@ -29,13 +29,13 @@ export const ROUTES = {
 
 // ── SNBT Mapel ───────────────────────────────────────────────
 export const MAPEL_LIST = [
-  { kode: 'PU',   nama: 'Penalaran Umum',                        colorClass: 'bg-purple-500/20 text-purple-300' },
-  { kode: 'PM',   nama: 'Penalaran Matematika',                  colorClass: 'bg-blue-500/20 text-blue-300' },
-  { kode: 'LBI',  nama: 'Literasi Bahasa Indonesia',             colorClass: 'bg-green-500/20 text-green-300' },
-  { kode: 'LBE',  nama: 'Literasi Bahasa Inggris',               colorClass: 'bg-sky-500/20 text-sky-300' },
-  { kode: 'KMBM', nama: 'Kemampuan Memahami Bacaan & Menulis',   colorClass: 'bg-teal-500/20 text-teal-300' },
-  { kode: 'PK',   nama: 'Pengetahuan Kuantitatif',               colorClass: 'bg-orange-500/20 text-orange-300' },
-  { kode: 'PPU',  nama: 'Pengetahuan & Pemahaman Umum',          colorClass: 'bg-rose-500/20 text-rose-300' },
+  { kode: 'PU',   nama: 'Penalaran Umum',                        colorClass: 'bg-sky-100 text-sky-700' },
+  { kode: 'PM',   nama: 'Penalaran Matematika',                  colorClass: 'bg-sky-100 text-sky-700' },
+  { kode: 'LBI',  nama: 'Literasi Bahasa Indonesia',             colorClass: 'bg-sky-100 text-sky-700' },
+  { kode: 'LBE',  nama: 'Literasi Bahasa Inggris',               colorClass: 'bg-sky-100 text-sky-700' },
+  { kode: 'KMBM', nama: 'Kemampuan Memahami Bacaan & Menulis',   colorClass: 'bg-sky-100 text-sky-700' },
+  { kode: 'PK',   nama: 'Pengetahuan Kuantitatif',               colorClass: 'bg-sky-100 text-sky-700' },
+  { kode: 'PPU',  nama: 'Pengetahuan & Pemahaman Umum',          colorClass: 'bg-sky-100 text-sky-700' },
 ] as const;
 
 // ── Tier labels ──────────────────────────────────────────────

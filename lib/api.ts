@@ -80,6 +80,7 @@ export const leaderboardApi = {
 
 // ── Latihan ──────────────────────────────────────────────
 export const latihanApi = {
+  mapelList:    () => axiosInstance.get('/mapel'),
   mulai:        (data: {
     tipe: string;
     mode?: string;
@@ -95,6 +96,7 @@ export const latihanApi = {
   selesai: (sesiId: number)                     => axiosInstance.post(`/latihan/${sesiId}/selesai`),
   hasil:   (sesiId: number)                     => axiosInstance.get(`/latihan/${sesiId}/hasil`),
 };
+
 
 // ── AI ───────────────────────────────────────────────────
 export const aiApi = {

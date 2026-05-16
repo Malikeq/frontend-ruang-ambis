@@ -37,7 +37,8 @@ type Phase = 'setup' | 'loading' | 'soal' | 'result';
 function AiPanel({ soal }: { soal: SoalData }) {
   const { user } = useAuthStore();
   const isPremium = user?.tier === 'premium' || user?.tier === 'daily_pass';
-  const [showAnalysis, setShowAnalysis] = useState(false);
+  // If pre-cached, auto-show analysis immediately on mount
+  const [showAnalysis, setShowAnalysis] = useState(!!soal.has_ai_explanation);
   const [tanyaOpen, setTanyaOpen]       = useState(false);
   const [pertanyaan, setPertanyaan]     = useState('');
   const [jawaban, setJawaban]           = useState<string | null>(null);
@@ -46,7 +47,8 @@ function AiPanel({ soal }: { soal: SoalData }) {
   const { data: analysisData, isLoading: loadingAnalysis, refetch: fetchAnalysis } = useQuery({
     queryKey: ['ai-explanation', soal.id],
     queryFn: () => aiApi.getExplanation(soal.id),
-    enabled: false,
+    // Auto-enable fetch if explanation is pre-cached — no button click needed
+    enabled: showAnalysis,
     staleTime: Infinity,
   });
 
@@ -64,6 +66,7 @@ function AiPanel({ soal }: { soal: SoalData }) {
 
   async function handleLoadAnalysis() {
     setShowAnalysis(true);
+    // query auto-runs because enabled becomes true; refetch for on-demand case
     try {
       await fetchAnalysis();
     } catch (err: any) {
@@ -87,41 +90,189 @@ function AiPanel({ soal }: { soal: SoalData }) {
         </div>
       )}
 
-      {/* AI Analysis (DCSEF) */}
+      {/* AI Analysis (DCSEF) — auto-shown for cached soal, button for on-demand */}
       {!showAnalysis ? (
         <Button variant="secondary" size="sm" className="w-full" onClick={handleLoadAnalysis}>
           <Brain className="h-4 w-4" />
-          {soal.has_ai_explanation ? 'Lihat Analisis AI' : 'Generate Analisis AI (DCSEF)'}
+          Generate Analisis AI (DCSEF)
         </Button>
       ) : loadingAnalysis ? (
-        <Card className="space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-4 w-1/2" /></Card>
-      ) : analysis ? (
-        <Card className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4" style={{ color: 'var(--primary)' }} />
-            <p className="text-sm font-bold" style={{ color: 'var(--primary)' }}>Analisis AI — DCSEF</p>
-            {analysis.from_cache && <span className="rounded px-1.5 py-0.5 text-[10px] text-emerald-500" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>Cached</span>}
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}>
+          <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
+            <Sparkles className="h-4 w-4 animate-pulse" style={{ color: 'var(--primary)' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--primary)' }}>Memuat Analisis AI…</span>
           </div>
-          {analysis.strategi && (
-            <div>
-              <p className="text-xs font-semibold t-muted uppercase tracking-wider">Strategi</p>
-              <p className="text-sm t-secondary mt-0.5">{analysis.strategi.konsep_utama}</p>
-              {analysis.strategi.tips_cepat && (
-                <p className="mt-1 text-xs text-amber-500">💡 {analysis.strategi.tips_cepat}</p>
+          <div className="p-4 space-y-2.5">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className={`h-3 ${i % 2 === 0 ? 'w-full' : 'w-2/3'}`} />)}
+          </div>
+        </div>
+      ) : analysis ? (
+        <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--primary-border)', backgroundColor: 'var(--bg-card)' }}>
+
+          {/* Header */}
+          <div className="px-4 py-3 flex items-center justify-between" style={{ backgroundColor: 'var(--primary-muted)', borderBottom: '1px solid var(--primary-border)' }}>
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4" style={{ color: 'var(--primary)' }} />
+              <p className="text-sm font-bold" style={{ color: 'var(--primary)' }}>Analisis AI — DSCEF</p>
+              <span className="text-[10px] t-muted">· {analysis.classifier?.sub_materi}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {analysis.from_cache && (
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: 'var(--primary-muted)', color: 'var(--primary)', border: '1px solid var(--primary-border)' }}>✓ Cached</span>
+              )}
+              {analysis.classifier?.estimasi_kesulitan && (
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize t-muted" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                  {analysis.classifier.estimasi_kesulitan}
+                </span>
               )}
             </div>
-          )}
-          {analysis.output && (
-            <div className="rounded-lg p-3" style={{ border: '1px solid rgba(16,185,129,0.3)', backgroundColor: 'rgba(16,185,129,0.07)' }}>
-              <p className="text-xs font-semibold text-emerald-500">✅ Jawaban: {analysis.output.opsi_benar}</p>
-              <p className="text-xs t-muted mt-0.5">{analysis.output.cara_cepat}</p>
-              <p className="text-[10px] t-muted mt-1">⏱ Waktu ideal: {analysis.output.waktu_ideal_detik}s</p>
-            </div>
-          )}
-        </Card>
-      ) : null}
+          </div>
 
+          <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+
+            {/* S — Stem */}
+            {analysis.dekonstruksi && (
+              <div className="px-4 py-3.5 space-y-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
+                  <span className="flex h-4 w-4 items-center justify-center rounded text-white text-[9px] font-black" style={{ backgroundColor: 'var(--primary)' }}>S</span>
+                  Stem — Apa yang Ditanya
+                </p>
+                <p className="text-sm t-secondary leading-relaxed">
+                  <span className="font-semibold t-primary">Ditanya: </span>{analysis.dekonstruksi.ditanya}
+                </p>
+                {analysis.dekonstruksi.diketahui?.length > 0 && (
+                  <ul className="space-y-1 pl-1">
+                    {analysis.dekonstruksi.diketahui.map((d: string, i: number) => (
+                      <li key={i} className="flex items-start gap-1.5 text-sm t-muted">
+                        <span className="shrink-0 mt-0.5" style={{ color: 'var(--primary)' }}>–</span>{d}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {analysis.dekonstruksi.kata_kunci?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {analysis.dekonstruksi.kata_kunci.map((k: string, i: number) => (
+                      <span key={i} className="rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'var(--primary-muted)', color: 'var(--primary)', border: '1px solid var(--primary-border)' }}>
+                        {k}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* D — Distractor */}
+            {analysis.dekonstruksi?.jebakan?.length > 0 && (
+              <div className="px-4 py-3.5 space-y-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
+                  <span className="flex h-4 w-4 items-center justify-center rounded text-white text-[9px] font-black" style={{ backgroundColor: 'var(--primary)' }}>D</span>
+                  Distractor — Jebakan Soal
+                </p>
+                <ul className="space-y-1.5">
+                  {analysis.dekonstruksi.jebakan.map((j: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm t-secondary leading-relaxed">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 t-muted" />
+                      {j}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* C — Context */}
+            {analysis.strategi && (
+              <div className="px-4 py-3.5 space-y-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
+                  <span className="flex h-4 w-4 items-center justify-center rounded text-white text-[9px] font-black" style={{ backgroundColor: 'var(--primary)' }}>C</span>
+                  Context — Konsep &amp; Strategi
+                </p>
+                <p className="text-sm t-secondary"><span className="font-semibold t-primary">Konsep: </span>{analysis.strategi.konsep_utama}</p>
+                {analysis.strategi.rumus && analysis.strategi.rumus !== '-' && (
+                  <p className="text-sm t-secondary">
+                    <span className="font-semibold t-primary">Rumus: </span>
+                    <code className="rounded px-1 py-0.5 text-xs font-mono" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>{analysis.strategi.rumus}</code>
+                  </p>
+                )}
+                {analysis.strategi.kapan_pakai && (
+                  <p className="text-sm t-muted"><span className="font-semibold t-secondary">Kapan pakai: </span>{analysis.strategi.kapan_pakai}</p>
+                )}
+                {analysis.strategi.bedakan_dengan && (
+                  <p className="text-sm t-muted"><span className="font-semibold t-secondary">Bedakan dengan: </span>{analysis.strategi.bedakan_dengan}</p>
+                )}
+                {analysis.strategi.tips_cepat && (
+                  <div className="flex items-start gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: 'var(--primary-muted)', border: '1px solid var(--primary-border)' }}>
+                    <Sparkles className="h-3.5 w-3.5 shrink-0 mt-1" style={{ color: 'var(--primary)' }} />
+                    <span className="t-secondary leading-relaxed">{analysis.strategi.tips_cepat}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* E — Execution */}
+            {analysis.eksekusi?.langkah?.length > 0 && (
+              <div className="px-4 py-3.5 space-y-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
+                  <span className="flex h-4 w-4 items-center justify-center rounded text-white text-[9px] font-black" style={{ backgroundColor: 'var(--primary)' }}>E</span>
+                  Execution — Langkah Pengerjaan
+                </p>
+                <ol className="space-y-2">
+                  {analysis.eksekusi.langkah.map((l: { no: number; aksi: string; hasil: string }, i: number) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white mt-0.5" style={{ backgroundColor: 'var(--primary)' }}>{l.no}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm t-secondary leading-relaxed">{l.aksi}</p>
+                        {l.hasil && <p className="text-xs mt-0.5 t-muted font-medium font-mono">→ {l.hasil}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {/* F — Framework / Output */}
+            {analysis.output && (
+              <div className="px-4 py-3.5 space-y-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
+                  <span className="flex h-4 w-4 items-center justify-center rounded text-white text-[9px] font-black" style={{ backgroundColor: 'var(--primary)' }}>F</span>
+                  Framework — Jawaban Final
+                </p>
+                <div className="rounded-xl p-3.5 space-y-2" style={{ backgroundColor: 'var(--primary-muted)', border: '1px solid var(--primary-border)' }}>
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-black text-white" style={{ backgroundColor: 'var(--primary)' }}>
+                      {analysis.output.opsi_benar}
+                    </span>
+                    <p className="text-sm font-semibold t-primary leading-snug">{analysis.output.jawaban_akhir}</p>
+                  </div>
+                  {analysis.output.cara_cepat && (
+                    <p className="text-sm t-secondary pt-1.5" style={{ borderTop: '1px solid var(--primary-border)' }}>
+                      <span className="font-semibold t-primary">Cara cepat: </span>{analysis.output.cara_cepat}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-1 t-muted">
+                    <Timer className="h-3 w-3" />
+                    <span className="text-[10px]">Waktu ideal: {analysis.output.waktu_ideal_detik} detik</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Weakness tags */}
+            {analysis.weakness_tags?.length > 0 && (
+              <div className="px-4 py-3 flex items-center gap-2 flex-wrap" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+                <span className="text-[10px] font-semibold uppercase tracking-wider t-muted shrink-0">Topik:</span>
+                {analysis.weakness_tags.map((t: string, i: number) => (
+                  <span key={i} className="rounded px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'var(--primary-muted)', color: 'var(--primary)', border: '1px solid var(--primary-border)' }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+
+          </div>
+        </div>
+      ) : null}
       {/* Tanya AI — premium only */}
+
       {!isPremium ? (
         <div className="flex items-center gap-2 rounded-xl p-3" style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
           <Lock className="h-4 w-4 text-amber-400 shrink-0" />
@@ -218,13 +369,32 @@ function SetupScreen({ onStart }: { onStart: (cfg: StartConfig) => void }) {
   const [timerMenit, setTimerMenit]         = useState(30);
   const [subMateriSel, setSubMateriSel]     = useState<number[]>([]);
 
+  // Load real mapel IDs from API (do not rely on MAPEL_LIST array index)
+  const { data: mapelIdsRes, isLoading: mapelIdsLoading } = useQuery({
+    queryKey: ['mapel-ids'],
+    queryFn: () => latihanApi.mapelList(),
+    staleTime: Infinity,
+  });
+  const mapelIdsMap: Record<string, number> = {};
+  (mapelIdsRes?.data?.data ?? []).forEach((m: { id: number; kode: string }) => {
+    mapelIdsMap[m.kode] = m.id;
+  });
+
+  // Resolve the real DB mapel ID for the currently selected mapel.
+  // Re-derived on every render so it always uses the latest mapelIdsMap.
+  // '🎯' is the special code for "Semua Mapel" (no filter).
+  const resolvedSelId: number | null =
+    !sel || sel.kode === '🎯' ? null : (mapelIdsMap[sel.kode] ?? null);
+
   const { data: subMateriRes, isLoading: loadingSub } = useQuery({
-    queryKey: ['sub-materi', sel?.id],
-    queryFn: () => latihanApi.getSubMateri(sel?.id ?? null),
-    enabled: !!sel && mode === 'per_bab',
+    // Key on resolvedSelId so query re-runs when API data arrives
+    queryKey: ['sub-materi', resolvedSelId],
+    queryFn: () => latihanApi.getSubMateri(resolvedSelId),
+    // Only fetch when we have a real DB mapel ID (or explicitly "Semua Mapel")
+    enabled: !!sel && mode === 'per_bab' && (resolvedSelId !== null || sel.kode === '🎯'),
     staleTime: 5 * 60 * 1000,
   });
-  const subMateriList: { id: number; nama: string }[] = subMateriRes?.data?.data ?? [];
+  const subMateriList: { id: number; nama: string; soal_count?: number }[] = subMateriRes?.data?.data ?? [];
 
   useEffect(() => {
     if (searchParams.get('tipe') === 'ujian') setMode('tryout');
@@ -245,10 +415,21 @@ function SetupScreen({ onStart }: { onStart: (cfg: StartConfig) => void }) {
 
   function handleStart() {
     if (!sel) return;
+
+    // Re-resolve mapel ID at start time (latest mapelIdsMap, avoids stale closure bug)
+    const finalMapelId: number | null =
+      sel.kode === '🎯' ? null : (mapelIdsMap[sel.kode] ?? null);
+
+    // Guard: specific mapel selected but IDs haven't loaded from API yet
+    if (sel.kode !== '🎯' && finalMapelId === null) {
+      toast.error('Data mapel sedang dimuat, tunggu sebentar lalu coba lagi.');
+      return;
+    }
+
     const selMode = LATIHAN_MODES.find(m => m.id === mode)!;
     onStart({
       tipe: selMode.tipe, mode,
-      mapelIds:     sel.id !== null ? [sel.id] : undefined,
+      mapelIds:     finalMapelId !== null ? [finalMapelId] : undefined,
       subMateriIds: subMateriSel.length > 0 ? subMateriSel : undefined,
       jumlahSoal,
       timerMenit:   timerOn ? timerMenit : undefined,
@@ -265,37 +446,48 @@ function SetupScreen({ onStart }: { onStart: (cfg: StartConfig) => void }) {
       {/* All-mapel shortcut */}
       <button
         onClick={() => openModal({ id: null, kode: '🎯', nama: 'Semua Mapel', colorClass: '' })}
-        className="w-full flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-200"
-        style={{ border: '1px solid var(--primary-border)', backgroundColor: 'var(--primary-muted)' }}
-        onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        className="w-full flex items-center gap-4 rounded-2xl p-5 text-left transition-all duration-200 bg-white"
+        style={{ border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary-border)'; (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--primary-muted)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.backgroundColor = '#fff'; }}
       >
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl"
-          style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))' }}>🎯</div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl"
+          style={{ backgroundColor: '#f0f9ff', border: '1px solid rgba(14,165,233,0.15)' }}>🎯</div>
         <div className="flex-1">
-          <p className="font-bold t-primary text-base">Semua Mapel</p>
-          <p className="text-sm t-muted mt-0.5">Campuran acak semua mata pelajaran SNBT</p>
+          <p className="font-bold text-sm" style={{ color: '#0f172a' }}>Semua Mapel</p>
+          <p className="text-xs mt-0.5" style={{ color: '#94a3b8' }}>Campuran acak semua mata pelajaran SNBT</p>
         </div>
-        <ChevronRight className="h-5 w-5 t-muted shrink-0" />
+        <ChevronRight className="h-4 w-4 shrink-0" style={{ color: '#cbd5e1' }} />
       </button>
 
       {/* Per-mapel cards */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest t-muted mb-3 px-1">Atau pilih per Mapel</p>
-        <div className="grid grid-cols-1 gap-2">
-          {MAPEL_LIST.map((m, idx) => (
-            <button key={m.kode}
-              onClick={() => openModal({ id: idx + 1, kode: m.kode, nama: m.nama, colorClass: m.colorClass })}
-              className="flex items-center gap-4 rounded-2xl p-4 text-left transition-all duration-200 group"
-              style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary-border)'; e.currentTarget.style.backgroundColor = 'var(--bg-elevated)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.backgroundColor = 'var(--bg-card)'; }}
-            >
-              <span className={cn('shrink-0 rounded-xl px-3 py-2 text-sm font-black min-w-[3.5rem] text-center', m.colorClass)}>{m.kode}</span>
-              <div className="flex-1 min-w-0"><p className="text-sm font-semibold t-primary leading-snug">{m.nama}</p></div>
-              <ChevronRight className="h-4 w-4 t-muted shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" />
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-3 px-1">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#94a3b8' }}>Atau pilih per Mapel</p>
+          {mapelIdsLoading && (
+            <span className="flex items-center gap-1 text-[10px]" style={{ color: '#94a3b8' }}>
+              <span className="h-3 w-3 animate-spin rounded-full border border-t-transparent" style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+              Memuat data mapel...
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-1.5">
+          {MAPEL_LIST.map((m) => {
+            // ID is opened from mapelIdsMap at click time; validation happens at handleStart
+            return (
+              <button key={m.kode}
+                onClick={() => openModal({ id: mapelIdsMap[m.kode] ?? null, kode: m.kode, nama: m.nama, colorClass: m.colorClass })}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all duration-150 bg-white group"
+                style={{ border: '1px solid #e2e8f0', opacity: mapelIdsLoading ? 0.7 : 1 }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary-border)'; (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--primary-muted)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.backgroundColor = '#fff'; }}
+              >
+                <span className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold min-w-[3rem] text-center" style={{ backgroundColor: '#f0f9ff', color: 'var(--primary)', border: '1px solid rgba(14,165,233,0.15)' }}>{m.kode}</span>
+                <div className="flex-1 min-w-0"><p className="text-sm font-medium leading-snug" style={{ color: '#334155' }}>{m.nama}</p></div>
+                <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5" style={{ color: '#cbd5e1' }} />
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -355,14 +547,21 @@ function SetupScreen({ onStart }: { onStart: (cfg: StartConfig) => void }) {
                   <p className="text-[11px] font-bold uppercase tracking-widest t-muted mb-3">
                     Pilih Topik / Bab <span className="normal-case font-normal ml-1">(kosong = semua bab)</span>
                   </p>
-                  {loadingSub ? (
+                  {/* Show waiting state if mapel IDs haven't resolved yet */}
+                  {sel?.kode !== '🎯' && resolvedSelId === null ? (
+                    <div className="flex items-center gap-2 t-muted text-sm py-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2"
+                        style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
+                      Menunggu data mapel...
+                    </div>
+                  ) : loadingSub ? (
                     <div className="flex items-center gap-2 t-muted text-sm py-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2"
                         style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }} />
                       Memuat topik...
                     </div>
                   ) : subMateriList.length === 0 ? (
-                    <p className="text-sm t-muted py-2">Tidak ada topik tersedia.</p>
+                    <p className="text-sm t-muted py-2">Tidak ada topik tersedia untuk mapel ini.</p>
                   ) : (
                     <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-y-auto pr-1">
                       {subMateriList.map(s => {
@@ -374,6 +573,9 @@ function SetupScreen({ onStart }: { onStart: (cfg: StartConfig) => void }) {
                               border: '1.5px solid var(--primary)', backgroundColor: 'var(--primary-muted)',
                             } : { border: '1px solid var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
                             <div className="flex-1 text-sm t-primary font-medium">{s.nama}</div>
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
+                              {(s as any).soal_count ?? '?'} soal
+                            </span>
                             {active && <span className="h-5 w-5 rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0"
                               style={{ background: 'var(--primary)' }}>✓</span>}
                           </button>
@@ -571,10 +773,31 @@ function SoalScreen({
         </div>
       </div>
 
-      {/* Soal card */}
+      {/* Soal card — auto-detect wacana format */}
       <Card>
-        <p className="text-sm leading-relaxed t-primary whitespace-pre-line">{soal.konten}</p>
+        {soal.konten.startsWith('Bacalah teks berikut!') ? (() => {
+          // Split wacana from question: "Bacalah teks berikut! {passage} {question?}"
+          const raw = soal.konten.replace('Bacalah teks berikut!', '').trim();
+          // Find the last sentence that ends with "?" as the question
+          const qMatch = raw.match(/^([\s\S]+?)\s+((?:[A-Z][^!.?]*\?))$/);
+          const wacanaText = qMatch ? qMatch[1].trim() : raw;
+          const questionText = qMatch ? qMatch[2].trim() : '';
+          return (
+            <div className="space-y-3">
+              <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>📖 Bacalah teks berikut dengan seksama!</p>
+                <p className="text-sm leading-relaxed t-secondary">{wacanaText}</p>
+              </div>
+              {questionText && (
+                <p className="text-sm font-semibold leading-relaxed t-primary">{questionText}</p>
+              )}
+            </div>
+          );
+        })() : (
+          <p className="text-sm leading-relaxed t-primary">{soal.konten}</p>
+        )}
       </Card>
+
 
       {/* Pilihan jawaban */}
       <div className="space-y-2">
@@ -773,9 +996,17 @@ function LatihanContent() {
       setPhase('soal');
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? '';
-      if (msg.includes('kosong') || err?.response?.status === 404) {
+      const msg    = err?.response?.data?.message ?? '';
+      const status = err?.response?.status;
+      if (msg.includes('kosong') || status === 404) {
         setEmptyBank(true);
+      } else if (status === 422) {
+        const available = err?.response?.data?.available;
+        if (available !== undefined) {
+          toast.error(`Bank soal hanya punya ${available} soal. Kurangi jumlah soal atau upload lebih banyak materi.`, { duration: 6000 });
+        } else {
+          toast.error(msg || 'Jumlah soal tidak mencukupi.');
+        }
       } else {
         toast.error(msg || 'Gagal memulai sesi latihan.');
       }
