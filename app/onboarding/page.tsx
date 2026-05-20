@@ -44,8 +44,9 @@ const REFERRAL_OPTIONS = [
 
 
 // ── Step 1: Referral ─────────────────────────────────────
-function StepKenalan({ onNext }: { onNext: (ref: string) => void }) {
+function StepKenalan({ onNext }: { onNext: (ref: string, sekolah: string) => void }) {
   const [selected, setSelected] = useState('');
+  const [sekolah, setSekolah]   = useState('');
   return (
     <div>
       <div className="mb-7 text-center">
@@ -74,10 +75,26 @@ function StepKenalan({ onNext }: { onNext: (ref: string) => void }) {
           </button>
         ))}
       </div>
+
+      {/* Asal Sekolah */}
+      <div className="mt-5">
+        <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#94a3b8]">
+          <span>🏫</span> Asal Sekolah <span className="text-[#475569] font-normal">(opsional)</span>
+        </label>
+        <input
+          value={sekolah}
+          onChange={e => setSekolah(e.target.value)}
+          placeholder="Contoh: SMAN 1 Jakarta, MAN 2 Surabaya..."
+          maxLength={200}
+          className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-4 py-3 text-sm text-[#f1f5f9] placeholder-[#475569] outline-none focus:border-[rgba(99,102,241,0.5)] transition-all"
+        />
+        <p className="mt-1.5 text-xs text-[#334155]">Membantu kami mempersonalisasi rekomendasimu</p>
+      </div>
+
       <button
-        onClick={() => selected && onNext(selected)}
+        onClick={() => selected && onNext(selected, sekolah)}
         disabled={!selected}
-        className="mt-7 w-full rounded-xl bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] py-3.5 text-sm font-bold text-white shadow-lg shadow-[rgba(99,102,241,0.3)] disabled:opacity-40 hover:opacity-90 transition-opacity"
+        className="mt-6 w-full rounded-xl bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] py-3.5 text-sm font-bold text-white shadow-lg shadow-[rgba(99,102,241,0.3)] disabled:opacity-40 hover:opacity-90 transition-opacity"
       >
         {selected ? 'Lanjut →' : 'Pilih salah satu dulu'}
       </button>
@@ -305,12 +322,15 @@ export default function OnboardingPage() {
   const [targets, setTargets]   = useState<Target[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleStep1 = async (ref: string) => {
-    // Best-effort save of referral source — non-blocking
+  const handleStep1 = async (ref: string, sekolah: string) => {
+    // Best-effort save of referral source + asal_sekolah — non-blocking
     try {
       await onboardingApi.saveReferral(ref);
+      if (sekolah.trim()) {
+        await onboardingApi.updateProfile({ asal_sekolah: sekolah.trim() });
+      }
     } catch {
-      // Silently ignore — referral is analytics data, not blocking UX
+      // Silently ignore — referral/sekolah is analytics data, not blocking UX
     }
     setStep(1);
   };

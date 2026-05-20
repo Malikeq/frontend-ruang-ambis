@@ -45,11 +45,13 @@ export const onboardingApi = {
     axiosInstance.get('/kampus', { params: { search, provinsi, size: 200 } }),
   getJurusan: (kampusId: number) =>
     axiosInstance.get(`/kampus/${kampusId}/jurusan`),
-  setTarget:  (targets: any[])  => axiosInstance.post('/onboarding/target', { targets }),
+  setTarget:    (targets: any[])  => axiosInstance.post('/onboarding/target', { targets }),
   saveReferral: (source: string)  => axiosInstance.post('/onboarding/referral', { referral_source: source }),
-  startDiag:  ()                => axiosInstance.post('/onboarding/diagnostic/mulai'),
-  submitDiag: (data: any)       => axiosInstance.post('/onboarding/diagnostic/jawab', data),
-  complete:   ()                => axiosInstance.post('/onboarding/complete'),
+  startDiag:    ()                => axiosInstance.post('/onboarding/diagnostic/mulai'),
+  submitDiag:   (data: any)       => axiosInstance.post('/onboarding/diagnostic/jawab', data),
+  complete:     ()                => axiosInstance.post('/onboarding/complete'),
+  updateProfile: (data: { name?: string; asal_sekolah?: string; referral_source?: string }) =>
+    axiosInstance.post('/user/profile', data),
 };
 
 // ── Dashboard ────────────────────────────────────────────
@@ -62,7 +64,10 @@ export const dashboardApi = {
 // ── User data ─────────────────────────────────────────────
 export const userApi = {
   /** GET /user/targets — kampus targets with full kampus+jurusan+logo_url */
-  getTargets: () => axiosInstance.get('/user/targets'),
+  getTargets:    () => axiosInstance.get('/user/targets'),
+  /** POST /user/profile — update name, asal_sekolah etc. */
+  updateProfile: (data: { name?: string; asal_sekolah?: string }) =>
+    axiosInstance.post('/user/profile', data),
 };
 
 
@@ -148,5 +153,35 @@ export const adminApi = {
   kampus:          (p?: any)   => axiosInstance.get('/admin/kampus', { params: p }),
   fetchKampusLogo: (id: number)=> axiosInstance.post(`/admin/kampus/${id}/fetch-logo`),
   fetchAllLogos:   (p?: any)   => axiosInstance.post('/admin/kampus/fetch-all-logos', p),
+  // Direct Gemini generate
+  generateSoal: (data: {
+    mapel_id: number;
+    sub_materi_id?: number | null;
+    jumlah_soal?: number;
+    tingkat_kesulitan?: string;
+    topik?: string;
+    auto_publish?: boolean;
+  }) => axiosInstance.post('/admin/ai/generate', data),
+  // Pengamat management
+  getPengamats:    (p?: any)   => axiosInstance.get('/admin/pengamat', { params: p }),
+  approvePengamat: (id: number, catatan?: string) => axiosInstance.post(`/admin/pengamat/${id}/approve`, { catatan }),
+  rejectPengamat:  (id: number, catatan?: string) => axiosInstance.post(`/admin/pengamat/${id}/reject`,  { catatan }),
+  getSekolahs:     (p?: any)   => axiosInstance.get('/admin/sekolah', { params: p }),
+  createSekolah:   (d: any)    => axiosInstance.post('/admin/sekolah', d),
 };
 
+// ── Pengamat ─────────────────────────────────────────────
+export const pengamatApi = {
+  register:       (d: { name: string; email: string; password: string; sekolah_id: number }) =>
+                    axiosInstance.post('/pengamat/register', d),
+  status:         ()           => axiosInstance.get('/pengamat/auth/status'),
+  sekolahList:    (q?: string) => axiosInstance.get('/pengamat/sekolah', { params: { q } }),
+  me:             ()           => axiosInstance.get('/pengamat/me'),
+  overview:       ()           => axiosInstance.get('/pengamat/overview'),
+  siswa:          (p?: any)    => axiosInstance.get('/pengamat/siswa', { params: p }),
+  siswaDetail:    (id: number) => axiosInstance.get(`/pengamat/siswa/${id}`),
+  ranking:        (periode?: string) => axiosInstance.get('/pengamat/ranking', { params: { periode } }),
+  aktivitasHarian:(hari?: number)   => axiosInstance.get('/pengamat/aktivitas-harian', { params: { hari } }),
+  kelemahanKelas: ()           => axiosInstance.get('/pengamat/kelemahan-kelas'),
+  atRisk:         ()           => axiosInstance.get('/pengamat/at-risk'),
+};
