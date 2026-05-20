@@ -11,12 +11,12 @@ import {
 import { useState } from 'react';
 
 const NAV = [
-  { href: '/pengamat/dashboard',  label: 'Overview',      icon: LayoutDashboard },
-  { href: '/pengamat/siswa',      label: 'Siswa',         icon: Users },
-  { href: '/pengamat/ranking',    label: 'Ranking',       icon: Trophy },
-  { href: '/pengamat/aktivitas',  label: 'Aktivitas',     icon: BarChart2 },
-  { href: '/pengamat/kelemahan',  label: 'Kelemahan Kelas', icon: BookOpen },
-  { href: '/pengamat/at-risk',    label: 'Siswa Berisiko', icon: AlertTriangle },
+  { href: '/pengamat/dashboard',            label: 'Overview',         icon: LayoutDashboard },
+  { href: '/pengamat/dashboard/siswa',      label: 'Siswa',            icon: Users },
+  { href: '/pengamat/dashboard/ranking',    label: 'Ranking',          icon: Trophy },
+  { href: '/pengamat/dashboard/aktivitas',  label: 'Aktivitas',        icon: BarChart2 },
+  { href: '/pengamat/dashboard/kelemahan',  label: 'Kelemahan Kelas',  icon: BookOpen },
+  { href: '/pengamat/dashboard/at-risk',    label: 'Siswa Berisiko',   icon: AlertTriangle },
 ];
 
 export default function PengamatDashboardLayout({ children }: { children: React.ReactNode }) {
