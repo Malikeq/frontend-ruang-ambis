@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Users, BookOpen, Sparkles,
   ClipboardCheck, Package, CreditCard, Image,
   LogOut, Menu, X, Shield, ChevronRight,
-  University, AlertTriangle,
+  University, AlertTriangle, Eye,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -33,9 +33,10 @@ const NAV_GROUPS = [
   {
     section: 'Pengguna & Keuangan',
     items: [
-      { href: '/admin/users',        label: 'Pengguna',    icon: Users,      exact: false },
-      { href: '/admin/packages',     label: 'Paket',       icon: Package,    exact: false },
-      { href: '/admin/transactions', label: 'Transaksi',   icon: CreditCard, exact: false },
+      { href: '/admin/users',        label: 'Pengguna',          icon: Users,      exact: false },
+      { href: '/admin/pengawas',     label: 'Pengawas Sekolah',  icon: Eye,        exact: false },
+      { href: '/admin/packages',     label: 'Paket',             icon: Package,    exact: false },
+      { href: '/admin/transactions', label: 'Transaksi',         icon: CreditCard, exact: false },
     ],
   },
   {

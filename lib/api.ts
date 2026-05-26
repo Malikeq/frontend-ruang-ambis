@@ -164,8 +164,10 @@ export const adminApi = {
   }) => axiosInstance.post('/admin/ai/generate', data),
   // Pengamat management
   getPengamats:    (p?: any)   => axiosInstance.get('/admin/pengamat', { params: p }),
+  createPengamat:  (d: any)    => axiosInstance.post('/admin/pengamat', d),
   approvePengamat: (id: number, catatan?: string) => axiosInstance.post(`/admin/pengamat/${id}/approve`, { catatan }),
   rejectPengamat:  (id: number, catatan?: string) => axiosInstance.post(`/admin/pengamat/${id}/reject`,  { catatan }),
+  deletePengamat:  (id: number) => axiosInstance.delete(`/admin/pengamat/${id}`),
   getSekolahs:     (p?: any)   => axiosInstance.get('/admin/sekolah', { params: p }),
   createSekolah:   (d: any)    => axiosInstance.post('/admin/sekolah', d),
 };
