@@ -130,8 +130,15 @@ export const adminApi = {
   unbanUser:       (id: number)=> axiosInstance.post(`/admin/users/${id}/unban`),
   updateUserTier:  (id: number, tier: string) => axiosInstance.patch(`/admin/users/${id}/tier`, { tier }),
   soal:            (p?: any)   => axiosInstance.get('/admin/soal', { params: p }),
+  showSoal:        (id: number)=> axiosInstance.get(`/admin/soal/${id}`),
+  createSoal:      (d: any)    => axiosInstance.post('/admin/soal', d),
+  updateSoalFull:  (id: number, d: any) => axiosInstance.put(`/admin/soal/${id}`, d),
   publishSoal:     (id: number)=> axiosInstance.post(`/admin/soal/${id}/publish`),
   deleteSoal:      (id: number)=> axiosInstance.delete(`/admin/soal/${id}`),
+  bulkImportSoal:  (fd: FormData) =>
+    axiosInstance.post('/admin/soal/bulk-import', fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  downloadSoalTemplate: () =>
+    axiosInstance.get('/admin/soal/template', { responseType: 'blob' }),
   aiUpload:        (fd: FormData) =>
     axiosInstance.post('/admin/ai/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
   uploadHistory:   ()          => axiosInstance.get('/admin/ai/upload/history'),
@@ -145,6 +152,7 @@ export const adminApi = {
   rejectDraft:         (id: number)=> axiosInstance.post(`/admin/ai/drafts/${id}/reject`),
   editDraft:           (id: number, data: any) => axiosInstance.patch(`/admin/ai/drafts/${id}`, data),
   mapelList:       ()          => axiosInstance.get('/admin/mapel-list'),
+  subMateri:       (mapelId?: number) => axiosInstance.get('/sub-materi', { params: mapelId ? { mapel_id: mapelId } : {} }),
   packages:        ()          => axiosInstance.get('/admin/packages'),
   createPackage:   (d: any)    => axiosInstance.post('/admin/packages', d),
   updatePackage:   (id: number, d: any) => axiosInstance.patch(`/admin/packages/${id}`, d),
@@ -170,7 +178,12 @@ export const adminApi = {
   deletePengamat:  (id: number) => axiosInstance.delete(`/admin/pengamat/${id}`),
   getSekolahs:     (p?: any)   => axiosInstance.get('/admin/sekolah', { params: p }),
   createSekolah:   (d: any)    => axiosInstance.post('/admin/sekolah', d),
+  // ── Streak Testing Tools ─────────────────────────────────
+  simulateDay:  (id: number, days = 1) => axiosInstance.post(`/admin/users/${id}/simulate-day`, { days }),
+  resetStreak:  (id: number)           => axiosInstance.post(`/admin/users/${id}/reset-streak`),
+  setStreak:    (id: number, streak_days: number) => axiosInstance.post(`/admin/users/${id}/set-streak`, { streak_days }),
 };
+
 
 // ── Pengamat ─────────────────────────────────────────────
 export const pengamatApi = {

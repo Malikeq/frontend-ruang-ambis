@@ -138,9 +138,9 @@ export default function PengamatDashboardPage() {
       {/* Quick links */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { href: '/pengamat/ranking',   icon: Trophy,        label: 'Lihat Ranking',      desc: 'Peringkat siswa berdasarkan skor SNBT', color: 'from-violet-500 to-violet-700' },
-          { href: '/pengamat/kelemahan', icon: BookOpen,       label: 'Kelemahan Kelas',    desc: 'Sub-materi yang paling banyak dilemahkan', color: 'from-sky-500 to-sky-700' },
-          { href: '/pengamat/at-risk',   icon: AlertTriangle, label: 'Siswa Berisiko',     desc: `${d?.tidak_aktif_7d ?? 0} siswa perlu perhatian`, color: 'from-amber-500 to-amber-700' },
+          { href: '/pengamat/dashboard/ranking',   icon: Trophy,        label: 'Lihat Ranking',   desc: 'Peringkat siswa berdasarkan skor SNBT', color: 'from-violet-500 to-violet-700' },
+          { href: '/pengamat/dashboard/kelemahan', icon: BookOpen,       label: 'Kelemahan Kelas', desc: 'Sub-materi yang paling banyak dilemahkan', color: 'from-sky-500 to-sky-700' },
+          { href: '/pengamat/dashboard/at-risk',   icon: AlertTriangle, label: 'Siswa Berisiko',  desc: `${d?.tidak_aktif_7d ?? 0} siswa perlu perhatian`, color: 'from-amber-500 to-amber-700' },
         ].map(item => (
           <a key={item.href} href={item.href}
             className={cn('rounded-2xl bg-gradient-to-br p-5 text-white hover:opacity-90 transition-opacity shadow-lg', item.color)}>
