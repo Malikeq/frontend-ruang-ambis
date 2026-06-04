@@ -157,6 +157,7 @@ export const adminApi = {
   createPackage:   (d: any)    => axiosInstance.post('/admin/packages', d),
   updatePackage:   (id: number, d: any) => axiosInstance.patch(`/admin/packages/${id}`, d),
   deletePackage:   (id: number)=> axiosInstance.delete(`/admin/packages/${id}`),
+  featuresDefinition: ()       => axiosInstance.get('/admin/features-definition'),
   // Kampus logos
   kampus:          (p?: any)   => axiosInstance.get('/admin/kampus', { params: p }),
   fetchKampusLogo: (id: number)=> axiosInstance.post(`/admin/kampus/${id}/fetch-logo`),

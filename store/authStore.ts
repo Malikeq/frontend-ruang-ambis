@@ -24,9 +24,10 @@ interface AuthState {
   user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
-  setAuth:   (user: AuthUser, token: string) => void;
-  setUser:   (user: AuthUser) => void;
-  clearAuth: () => void;
+  setAuth:     (user: AuthUser, token: string) => void;
+  setUser:     (user: AuthUser) => void;
+  clearAuth:   () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -56,6 +57,17 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => {
         if (typeof document !== 'undefined') clearAuthCookie();
         set({ user: null, token: null, isAuthenticated: false });
+      },
+
+      refreshUser: async () => {
+        const { token, setUser } = get();
+        if (!token) return;
+        try {
+          const { default: axiosInstance } = await import('@/lib/api');
+          const res = await axiosInstance.get('/auth/me');
+          const user = res.data?.data ?? res.data;
+          if (user?.id) setUser(user);
+        } catch { /* ignore */ }
       },
     }),
     { name: 'ailolos-auth' }
